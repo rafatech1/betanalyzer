@@ -121,26 +121,44 @@ class OddsAPIClient:
         self._regions = settings.odds_api_regions
         self._preferred_bookmaker = settings.odds_api_preferred_bookmaker
 
+    async def _request_events(
+        self, sport_key: str, markets: tuple[str, ...]
+    ) -> list[dict[str, Any]]:
+        await check_and_increment_monthly_quota(QUOTA_KEY, self._monthly_limit)
+
+        async with httpx.AsyncClient(base_url=self._base_url, timeout=15.0) as client:
+            response = await client.get(
+                f"/sports/{sport_key}/odds",
+                params={
+                    "apiKey": self._api_key,
+                    "regions": self._regions,
+                    "markets": ",".join(markets),
+                    "oddsFormat": "decimal",
+                },
+            )
+            response.raise_for_status()
+            return response.json()
+
     async def get_events_odds(
         self, sport_key: str, markets: tuple[str, ...] = ("h2h", "totals", "btts")
     ) -> list[dict[str, Any]]:
         cache_key = f"odds_api:{sport_key}:{','.join(markets)}:{self._regions}"
 
         async def fetch() -> list[dict[str, Any]]:
-            await check_and_increment_monthly_quota(QUOTA_KEY, self._monthly_limit)
-
-            async with httpx.AsyncClient(base_url=self._base_url, timeout=15.0) as client:
-                response = await client.get(
-                    f"/sports/{sport_key}/odds",
-                    params={
-                        "apiKey": self._api_key,
-                        "regions": self._regions,
-                        "markets": ",".join(markets),
-                        "oddsFormat": "decimal",
-                    },
-                )
-                response.raise_for_status()
-                return response.json()
+            try:
+                return await self._request_events(sport_key, markets)
+            except httpx.HTTPStatusError as exc:
+                # Algumas ligas não suportam o mercado "btts" e respondem 422
+                # para a combinação de markets — tenta de novo sem ele antes
+                # de desistir, em vez de falhar a coleta inteira da liga.
+                if exc.response.status_code == 422 and "btts" in markets:
+                    logger.warning(
+                        "odds_api_btts_unsupported_retrying_without_btts",
+                        sport_key=sport_key,
+                    )
+                    fallback_markets = tuple(m for m in markets if m != "btts")
+                    return await self._request_events(sport_key, fallback_markets)
+                raise
 
         return await get_or_fetch_json(cache_key, TTL_ODDS, fetch)
 
