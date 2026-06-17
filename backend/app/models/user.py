@@ -20,7 +20,13 @@ class User(Base):
     email: Mapped[str] = mapped_column(String(255), nullable=False, unique=True, index=True)
     senha_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     role: Mapped[UserRole] = mapped_column(
-        Enum(UserRole, name="user_role"), nullable=False, default=UserRole.USER
+        # values_callable é necessário porque o SQLAlchemy, por padrão, usa o
+        # NOME do membro do enum (ADMIN/USER) para o valor no banco, não o
+        # .value ("admin"/"user") — e o tipo nativo `user_role` no Postgres
+        # foi criado pela migração só com os labels minúsculos.
+        Enum(UserRole, name="user_role", values_callable=lambda enum_cls: [e.value for e in enum_cls]),
+        nullable=False,
+        default=UserRole.USER,
     )
     ativo: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     created_at: Mapped[datetime] = mapped_column(
