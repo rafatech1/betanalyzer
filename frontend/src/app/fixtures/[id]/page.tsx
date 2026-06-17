@@ -5,9 +5,12 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 
 import { analyzeFixture, fetchFixture, fetchFixtureDetails, fetchFixtureOdds } from "@/lib/api";
+import { Accordion } from "@/components/Accordion";
 import { AnalysisResultCard } from "@/components/AnalysisResultCard";
 import { AnalysisSkeleton, Skeleton } from "@/components/Skeleton";
 import { ClaudeSummaryCard } from "@/components/ClaudeSummaryCard";
+import { FixtureHeader } from "@/components/FixtureHeader";
+import { IconBolt } from "@/components/icons";
 import { OddsTable } from "@/components/OddsTable";
 import type { Analysis } from "@/types/analysis";
 import type { Fixture, FixtureDetails } from "@/types/fixture";
@@ -63,134 +66,132 @@ export default function FixturePage() {
 
   if (loading) {
     return (
-      <div className="space-y-4">
-        <Skeleton className="h-6 w-2/3" />
+      <div className="mx-auto max-w-4xl space-y-4">
+        <Skeleton className="h-44 w-full rounded-2xl" />
         <Skeleton className="h-32 w-full" />
         <Skeleton className="h-48 w-full" />
       </div>
     );
   }
 
-  const claudeResumo = analyses?.find((a) => a.resumo_ia)?.resumo_ia ?? null;
-
   if (loadError || !fixture) {
     return (
-      <p className="rounded-lg border border-ev-negative/30 bg-ev-negative/10 p-3 text-sm text-ev-negative">
+      <p className="mx-auto max-w-4xl rounded-lg border border-ev-negative/30 bg-ev-negative/10 p-3 text-sm text-ev-negative">
         Erro ao carregar o jogo: {loadError ?? "não encontrado"}
       </p>
     );
   }
 
+  const claudeResumo = analyses?.find((a) => a.resumo_ia)?.resumo_ia ?? null;
+  const hasContext = Boolean(
+    details?.forma_casa ||
+      details?.forma_fora ||
+      details?.h2h_resumo ||
+      details?.lesoes_casa.length ||
+      details?.lesoes_fora.length
+  );
+
   return (
-    <div className="space-y-6">
-      <div>
-        <p className="text-xs text-muted">
-          {fixture.liga.nome} · {fixture.liga.pais}
-        </p>
-        <h1 className="text-2xl font-bold text-foreground">
-          {fixture.time_casa.nome} <span className="text-muted">vs</span> {fixture.time_fora.nome}
-        </h1>
-        <p className="font-mono text-sm text-muted">
-          {new Date(fixture.data_hora).toLocaleString("pt-BR")}
-        </p>
-      </div>
+    <div className="mx-auto max-w-4xl space-y-8">
+      <FixtureHeader fixture={fixture} />
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        <div className="space-y-6 lg:col-span-2">
-          <section>
-            <h2 className="mb-2 text-sm font-semibold text-foreground/80">Odds</h2>
-            <OddsTable odds={odds} />
-          </section>
+      <section className="space-y-4">
+        <h2 className="text-sm font-semibold text-foreground/80">Odds</h2>
+        <OddsTable odds={odds} />
+      </section>
 
-          <section className="space-y-3">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <h2 className="text-sm font-semibold text-foreground/80">Análise EV+</h2>
-              <motion.button
-                whileTap={{ scale: 0.97 }}
-                onClick={handleAnalyze}
-                disabled={analyzing}
-                className="min-h-[44px] rounded-lg bg-gradient-primary px-4 py-2 text-sm font-semibold text-background shadow-glow transition-opacity hover:opacity-90 disabled:opacity-50"
-              >
-                {analyzing ? "Analisando..." : "Analisar jogo"}
-              </motion.button>
-            </div>
-
-            {analyzeError && (
-              <p className="rounded-lg border border-ev-negative/30 bg-ev-negative/10 p-3 text-sm text-ev-negative">
-                {analyzeError}
-              </p>
-            )}
-
-            {analyzing && (
-              <div className="space-y-3">
-                <AnalysisSkeleton />
-                <AnalysisSkeleton />
-              </div>
-            )}
-
-            {!analyzing && analyses && (
-              <div className="space-y-4">
-                {claudeResumo && <ClaudeSummaryCard resumo={claudeResumo} />}
-
-                {analyses.length === 0 ? (
-                  <p className="text-sm text-muted">
-                    Nenhuma odd disponível para gerar uma recomendação ainda.
-                  </p>
-                ) : (
-                  <div className="grid gap-4 md:grid-cols-2">
-                    {analyses.map((analysis, index) => (
-                      <AnalysisResultCard key={analysis.id} analysis={analysis} index={index} />
-                    ))}
-                  </div>
-                )}
-
-                {avisoRisco && (
-                  <p className="rounded-lg border border-primary/30 bg-primary/10 p-3 text-xs text-foreground/80">
-                    {avisoRisco}
-                  </p>
-                )}
-              </div>
-            )}
-          </section>
+      <section className="space-y-4">
+        <div className="flex justify-center">
+          <motion.button
+            whileTap={{ scale: 0.97 }}
+            onClick={handleAnalyze}
+            disabled={analyzing}
+            className="flex min-h-[52px] items-center gap-2 rounded-xl bg-gradient-primary px-8 py-3 text-base font-semibold text-background shadow-glow transition-opacity hover:opacity-90 disabled:opacity-50"
+          >
+            <IconBolt className="h-5 w-5" />
+            {analyzing ? "Analisando..." : "Analisar com IA"}
+          </motion.button>
         </div>
 
-        <aside className="space-y-3">
-          {details && (
-            <section className="card-gradient-border space-y-2.5 rounded-xl border border-border bg-surface p-4 text-sm">
-              <h2 className="text-sm font-semibold text-foreground/80">Estatísticas e contexto</h2>
-              {details.forma_casa && (
-                <p>
-                  <span className="text-muted">Forma {fixture.time_casa.nome}:</span>{" "}
-                  {details.forma_casa}
-                </p>
-              )}
-              {details.forma_fora && (
-                <p>
-                  <span className="text-muted">Forma {fixture.time_fora.nome}:</span>{" "}
-                  {details.forma_fora}
-                </p>
-              )}
-              {details.h2h_resumo && (
-                <p>
-                  <span className="text-muted">H2H:</span> {details.h2h_resumo}
-                </p>
-              )}
-              {details.lesoes_casa.length > 0 && (
-                <p>
-                  <span className="text-muted">Lesões {fixture.time_casa.nome}:</span>{" "}
-                  {details.lesoes_casa.join(", ")}
-                </p>
-              )}
-              {details.lesoes_fora.length > 0 && (
-                <p>
-                  <span className="text-muted">Lesões {fixture.time_fora.nome}:</span>{" "}
-                  {details.lesoes_fora.join(", ")}
-                </p>
-              )}
-            </section>
-          )}
-        </aside>
-      </div>
+        {analyzeError && (
+          <p className="rounded-lg border border-ev-negative/30 bg-ev-negative/10 p-3 text-sm text-ev-negative">
+            {analyzeError}
+          </p>
+        )}
+
+        {analyzing && (
+          <div className="space-y-3">
+            <AnalysisSkeleton />
+            <AnalysisSkeleton />
+          </div>
+        )}
+
+        {!analyzing && analyses && (
+          <div className="space-y-4">
+            <h2 className="text-sm font-semibold text-foreground/80">Análise EV+</h2>
+
+            {claudeResumo && <ClaudeSummaryCard resumo={claudeResumo} />}
+
+            {analyses.length === 0 ? (
+              <p className="text-sm text-muted">
+                Nenhuma odd disponível para gerar uma recomendação ainda.
+              </p>
+            ) : (
+              <div className="grid gap-4 md:grid-cols-2">
+                {analyses.map((analysis, index) => (
+                  <AnalysisResultCard key={analysis.id} analysis={analysis} index={index} />
+                ))}
+              </div>
+            )}
+
+            {avisoRisco && (
+              <p className="rounded-lg border border-primary/30 bg-primary/10 p-3 text-xs text-foreground/80">
+                {avisoRisco}
+              </p>
+            )}
+          </div>
+        )}
+      </section>
+
+      <Accordion title="Estatísticas e contexto">
+        {hasContext ? (
+          <>
+            {details?.forma_casa && (
+              <p>
+                <span className="text-muted">Forma {fixture.time_casa.nome}:</span>{" "}
+                {details.forma_casa}
+              </p>
+            )}
+            {details?.forma_fora && (
+              <p>
+                <span className="text-muted">Forma {fixture.time_fora.nome}:</span>{" "}
+                {details.forma_fora}
+              </p>
+            )}
+            {details?.h2h_resumo && (
+              <p>
+                <span className="text-muted">H2H:</span> {details.h2h_resumo}
+              </p>
+            )}
+            {details?.lesoes_casa && details.lesoes_casa.length > 0 && (
+              <p>
+                <span className="text-muted">Lesões {fixture.time_casa.nome}:</span>{" "}
+                {details.lesoes_casa.join(", ")}
+              </p>
+            )}
+            {details?.lesoes_fora && details.lesoes_fora.length > 0 && (
+              <p>
+                <span className="text-muted">Lesões {fixture.time_fora.nome}:</span>{" "}
+                {details.lesoes_fora.join(", ")}
+              </p>
+            )}
+          </>
+        ) : (
+          <p className="py-2 text-center text-muted">
+            Nenhuma informação adicional disponível para este jogo ainda.
+          </p>
+        )}
+      </Accordion>
     </div>
   );
 }
