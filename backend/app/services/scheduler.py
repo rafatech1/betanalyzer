@@ -1,4 +1,4 @@
-from datetime import date, datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from sqlalchemy import select
@@ -11,50 +11,52 @@ from app.services.analysis.exceptions import FixtureNotFoundError, InsufficientM
 from app.services.analysis.lock import AnalysisInProgressError
 from app.services.analysis.pipeline import run_analysis_pipeline
 from app.services.cache import QuotaExceededError
-from app.services.external.api_football import APIFootballClient
 from app.services.external.odds_api import OddsAPIClient, extract_best_odds
-from app.services.fixtures_repo import get_upcoming_fixtures_with_teams, upsert_fixtures_batch
+from app.services.fixtures_repo import (
+    get_upcoming_fixtures_with_teams,
+    upsert_fixtures_from_odds_events,
+)
 from app.services.model_prediction_repo import backfill_model_prediction_results
 from app.services.odds_matching import find_matching_fixture
 from app.services.odds_repo import save_odds_selections
 
 logger = get_logger(__name__)
 
-# Sem ligas monitoradas configuradas, busca globalmente apenas os próximos dias
-# (1 requisição por dia consultado) para não comprometer a cota diária.
-GLOBAL_FETCH_DAYS_AHEAD = 2
-
 scheduler = AsyncIOScheduler()
 
 
 async def update_fixtures_job() -> None:
+    """Fonte principal de fixtures: The Odds API (não a API-Football, cujo
+    plano gratuito não cobre a temporada atual). A API-Football continua
+    em uso apenas para H2H e lesões (ver context_builder.py/fixture_details.py)."""
     settings = get_settings()
-    client = APIFootballClient()
-    today = date.today()
+
+    if not settings.odds_api_sport_keys:
+        logger.warning("fixtures_job_skipped_no_sport_keys")
+        return
+
+    odds_client = OddsAPIClient()
+    total_fixtures = 0
 
     async with AsyncSessionLocal() as db:
-        try:
-            if settings.monitored_league_ids:
-                for league_id in settings.monitored_league_ids:
-                    fixtures = await client.get_fixtures(
-                        today, today + timedelta(days=7), league_id=league_id
-                    )
-                    fixture_ids = await upsert_fixtures_batch(db, fixtures)
-                    logger.info(
-                        "fixtures_updated", league_id=league_id, count=len(fixture_ids)
-                    )
-            else:
-                fixtures = await client.get_fixtures(
-                    today, today + timedelta(days=GLOBAL_FETCH_DAYS_AHEAD)
-                )
-                fixture_ids = await upsert_fixtures_batch(db, fixtures)
-                logger.info("fixtures_updated", league_id=None, count=len(fixture_ids))
-        except QuotaExceededError as exc:
-            logger.warning("fixtures_job_skipped_quota", error=str(exc))
+        for sport_key in settings.odds_api_sport_keys:
+            try:
+                events = await odds_client.get_events_odds(sport_key)
+            except QuotaExceededError as exc:
+                logger.warning("fixtures_job_skipped_quota", sport_key=sport_key, error=str(exc))
+                continue
+
+            fixture_ids = await upsert_fixtures_from_odds_events(db, sport_key, events)
+            total_fixtures += len(fixture_ids)
+            logger.info(
+                "fixtures_updated_from_odds_api", sport_key=sport_key, count=len(fixture_ids)
+            )
 
         updated = await backfill_model_prediction_results(db)
         if updated:
             logger.info("model_predictions_backfilled", count=updated)
+
+    logger.info("fixtures_job_completed", total_fixtures=total_fixtures)
 
 
 async def update_odds_job() -> None:

@@ -9,6 +9,7 @@ from sqlalchemy.orm import aliased, selectinload
 from app.models.fixture import Fixture, FixtureStatus
 from app.models.league import League
 from app.models.team import Team
+from app.services.external.api_football import current_season
 
 _STATUS_MAP: dict[str, FixtureStatus] = {
     "NS": FixtureStatus.AGENDADA,
@@ -119,6 +120,109 @@ async def upsert_fixtures_batch(db: AsyncSession, fixtures_payload: list[dict[st
             db, fixture_payload, league_payload["id"], teams_payload, goals_payload
         )
         fixture_ids.append(fixture_id)
+
+    await db.commit()
+    return fixture_ids
+
+
+# Rótulo (nome, país) para sport_keys conhecidos da The Odds API — usados
+# como fonte principal de fixtures desde que o plano gratuito da API-Football
+# deixou de cobrir a temporada atual. Chaves fora deste mapa recebem um rótulo
+# derivado automaticamente (ver `_league_info_from_sport_key`).
+SPORT_KEY_LEAGUE_INFO: dict[str, tuple[str, str]] = {
+    "soccer_brazil_campeonato": ("Brasileirão Série A", "Brasil"),
+    "soccer_brazil_serie_b": ("Brasileirão Série B", "Brasil"),
+    "soccer_epl": ("Premier League", "Inglaterra"),
+    "soccer_spain_la_liga": ("La Liga", "Espanha"),
+    "soccer_italy_serie_a": ("Serie A", "Itália"),
+    "soccer_germany_bundesliga": ("Bundesliga", "Alemanha"),
+    "soccer_france_ligue_one": ("Ligue 1", "França"),
+    "soccer_portugal_primeira_liga": ("Primeira Liga", "Portugal"),
+    "soccer_netherlands_eredivisie": ("Eredivisie", "Holanda"),
+    "soccer_uefa_champs_league": ("UEFA Champions League", "Europa"),
+    "soccer_uefa_europa_league": ("UEFA Europa League", "Europa"),
+    "soccer_conmebol_copa_libertadores": ("Copa Libertadores", "América do Sul"),
+}
+
+
+def _league_info_from_sport_key(sport_key: str) -> tuple[str, str]:
+    if sport_key in SPORT_KEY_LEAGUE_INFO:
+        return SPORT_KEY_LEAGUE_INFO[sport_key]
+    label = sport_key.removeprefix("soccer_").replace("_", " ").title()
+    return label, "Desconhecido"
+
+
+def _parse_commence_time(raw: str) -> datetime:
+    return datetime.fromisoformat(raw.replace("Z", "+00:00"))
+
+
+async def upsert_league_from_sport_key(db: AsyncSession, sport_key: str) -> int:
+    """Upsert idempotente de uma liga sourced da The Odds API, identificada
+    pelo sport_key (sem ID numérico equivalente ao da API-Football)."""
+    nome, pais = _league_info_from_sport_key(sport_key)
+    stmt = pg_insert(League).values(
+        external_key=sport_key,
+        nome=nome,
+        pais=pais,
+        temporada=current_season(),
+    )
+    stmt = stmt.on_conflict_do_update(
+        index_elements=[League.external_key],
+        set_={"nome": stmt.excluded.nome, "pais": stmt.excluded.pais},
+    ).returning(League.id)
+    result = await db.execute(stmt)
+    return result.scalar_one()
+
+
+async def upsert_team_by_name(db: AsyncSession, nome: str, liga_id: int) -> int:
+    """Upsert idempotente de um time sourced da The Odds API, identificado
+    por (nome, liga_id) — a API só fornece o nome, sem ID estável."""
+    stmt = pg_insert(Team).values(nome=nome, liga_id=liga_id)
+    stmt = stmt.on_conflict_do_update(
+        index_elements=[Team.nome, Team.liga_id],
+        set_={"nome": stmt.excluded.nome},
+    ).returning(Team.id)
+    result = await db.execute(stmt)
+    return result.scalar_one()
+
+
+async def upsert_fixtures_from_odds_events(
+    db: AsyncSession, sport_key: str, events: list[dict[str, Any]]
+) -> list[int]:
+    """Persiste leagues, teams e fixtures a partir de eventos da The Odds API.
+
+    Diferente de `upsert_fixtures_batch` (API-Football), a The Odds API não
+    informa placar nem status ao vivo/finalizado — fixtures novos entram
+    sempre como AGENDADA, e o status não é atualizado por aqui depois disso.
+    """
+    if not events:
+        return []
+
+    league_id = await upsert_league_from_sport_key(db, sport_key)
+
+    fixture_ids: list[int] = []
+    for event in events:
+        home_id = await upsert_team_by_name(db, event["home_team"], league_id)
+        away_id = await upsert_team_by_name(db, event["away_team"], league_id)
+
+        stmt = pg_insert(Fixture).values(
+            external_id=event["id"],
+            liga_id=league_id,
+            time_casa_id=home_id,
+            time_fora_id=away_id,
+            data_hora=_parse_commence_time(event["commence_time"]),
+            status=FixtureStatus.AGENDADA,
+        )
+        stmt = stmt.on_conflict_do_update(
+            index_elements=[Fixture.external_id],
+            set_={
+                "data_hora": stmt.excluded.data_hora,
+                "time_casa_id": stmt.excluded.time_casa_id,
+                "time_fora_id": stmt.excluded.time_fora_id,
+            },
+        ).returning(Fixture.id)
+        result = await db.execute(stmt)
+        fixture_ids.append(result.scalar_one())
 
     await db.commit()
     return fixture_ids

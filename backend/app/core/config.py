@@ -35,6 +35,13 @@ class Settings(BaseSettings):
     api_football_base_url: str = "https://v3.football.api-sports.io"
     odds_api_base_url: str = "https://api.the-odds-api.com/v4"
 
+    # Temporada fixa para chamadas à API-Football (ex.: 2024). Opcional: o
+    # plano gratuito não cobre a temporada atual, então quando não definida
+    # o cálculo automático (current_season()) pode apontar para uma
+    # temporada sem acesso. A API-Football é usada hoje só para H2H/lesões
+    # (não mais para a listagem de jogos, que vem da The Odds API).
+    football_season: int | None = None
+
     # Limites dos planos gratuitos — respeitados via contadores no Redis.
     api_football_daily_limit: int = 100
     odds_api_monthly_limit: int = 500

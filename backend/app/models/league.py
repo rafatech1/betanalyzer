@@ -13,6 +13,10 @@ class League(Base):
     nome: Mapped[str] = mapped_column(String(255), nullable=False)
     pais: Mapped[str] = mapped_column(String(100), nullable=False)
     temporada: Mapped[int] = mapped_column(Integer, nullable=False)
+    # sport_key da The Odds API (ex.: "soccer_brazil_campeonato"), usado para
+    # upsert idempotente de ligas sourced de lá — que não têm um ID numérico
+    # equivalente ao da API-Football. Nulo para ligas legadas da API-Football.
+    external_key: Mapped[str | None] = mapped_column(String(100), nullable=True, unique=True)
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()

@@ -43,6 +43,7 @@ class APIFootballClient:
         self._base_url = settings.api_football_base_url
         self._api_key = settings.api_football_key
         self._daily_limit = settings.api_football_daily_limit
+        self._season_override = settings.football_season
 
     async def _get(self, endpoint: str, params: dict[str, Any], ttl: int) -> list[dict[str, Any]]:
         cache_key = "api_football:" + endpoint + ":" + ":".join(
@@ -83,7 +84,7 @@ class APIFootballClient:
         busca globalmente dia a dia via parâmetro `date` — mais caro em termos
         de cota, mitigado pelo cache de 6h.
         """
-        season = season or current_season(date_from)
+        season = season or self._season_override or current_season(date_from)
         results: list[dict[str, Any]] = []
 
         if league_id is not None:
@@ -107,7 +108,7 @@ class APIFootballClient:
     async def get_team_statistics(
         self, team_id: int, league_id: int, season: int | None = None
     ) -> dict[str, Any]:
-        season = season or current_season()
+        season = season or self._season_override or current_season()
         params = {"team": team_id, "league": league_id, "season": season}
         response = await self._get("/teams/statistics", params, TTL_TEAM_STATISTICS)
         return response[0] if isinstance(response, list) and response else (response or {})
@@ -129,6 +130,6 @@ class APIFootballClient:
             params["fixture"] = fixture_id
         else:
             params["team"] = team_id
-            params["season"] = current_season()
+            params["season"] = self._season_override or current_season()
 
         return await self._get("/injuries", params, TTL_INJURIES)
