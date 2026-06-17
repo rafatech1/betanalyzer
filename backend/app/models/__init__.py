@@ -8,6 +8,7 @@ from app.models.bet import Bet
 from app.models.bankroll import Bankroll
 from app.models.app_settings import AppSettings
 from app.models.user import User
+from app.models.password_reset_token import PasswordResetToken
 
 __all__ = [
     "League",
@@ -20,4 +21,5 @@ __all__ = [
     "Bankroll",
     "AppSettings",
     "User",
+    "PasswordResetToken",
 ]

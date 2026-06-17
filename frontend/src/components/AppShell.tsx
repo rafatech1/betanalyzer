@@ -8,11 +8,13 @@ import { MobileHeader } from "@/components/MobileHeader";
 import { ResponsibleGamingFooter } from "@/components/ResponsibleGamingFooter";
 import { Sidebar } from "@/components/Sidebar";
 
+const STANDALONE_PATHS = ["/login", "/register", "/forgot-password", "/reset-password"];
+
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const isLogin = pathname === "/login";
+  const isStandalone = STANDALONE_PATHS.includes(pathname);
 
-  if (isLogin) {
+  if (isStandalone) {
     return <AuthGuard>{children}</AuthGuard>;
   }
 

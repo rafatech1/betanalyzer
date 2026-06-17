@@ -2,13 +2,20 @@
 
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
 
-import { fetchMe, login as apiLogin, logout as apiLogout, refreshAccessToken } from "@/lib/api";
+import {
+  fetchMe,
+  login as apiLogin,
+  logout as apiLogout,
+  register as apiRegister,
+  refreshAccessToken,
+} from "@/lib/api";
 import type { User } from "@/types/auth";
 
 interface AuthContextValue {
   user: User | null;
   loading: boolean;
   login: (email: string, senha: string) => Promise<void>;
+  register: (nome: string, email: string, senha: string) => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -42,13 +49,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(me);
   }, []);
 
+  const register = useCallback(async (nome: string, email: string, senha: string) => {
+    await apiRegister(nome, email, senha);
+    const me = await fetchMe();
+    setUser(me);
+  }, []);
+
   const logout = useCallback(async () => {
     await apiLogout();
     setUser(null);
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, register, logout }}>
       {children}
     </AuthContext.Provider>
   );

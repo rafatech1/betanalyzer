@@ -81,6 +81,36 @@ export async function login(email: string, senha: string): Promise<TokenResponse
   return data;
 }
 
+export async function register(
+  nome: string,
+  email: string,
+  senha: string
+): Promise<TokenResponse> {
+  const data = await request<TokenResponse>(
+    "/auth/register",
+    { method: "POST", body: JSON.stringify({ nome, email, senha }) },
+    false
+  );
+  setAccessToken(data.access_token);
+  return data;
+}
+
+export async function requestPasswordReset(email: string): Promise<void> {
+  await request<void>(
+    "/auth/forgot-password",
+    { method: "POST", body: JSON.stringify({ email }) },
+    false
+  );
+}
+
+export async function resetPassword(token: string, senha: string): Promise<void> {
+  await request<void>(
+    "/auth/reset-password",
+    { method: "POST", body: JSON.stringify({ token, senha }) },
+    false
+  );
+}
+
 export async function refreshAccessToken(): Promise<string> {
   const response = await rawRequest("/auth/refresh", { method: "POST" });
   if (!response.ok) {

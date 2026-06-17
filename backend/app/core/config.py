@@ -100,6 +100,18 @@ class Settings(BaseSettings):
     login_rate_limit_window_seconds: int = 60
     login_lockout_seconds: int = 300
 
+    # Envio de email transacional (Resend) — usado hoje só para o fluxo de
+    # "esqueci minha senha". Sem a chave configurada, o envio é apenas
+    # logado (ver app/services/email.py), não falha a request.
+    resend_api_key: str = ""
+    resend_from_email: str = "BetAnalyzer <onboarding@resend.dev>"
+
+    # URL pública do frontend, usada para montar o link de redefinição de
+    # senha enviado por email (ex.: {FRONTEND_URL}/reset-password?token=...).
+    frontend_url: str = "http://localhost:3000"
+
+    password_reset_token_expire_hours: int = 1
+
 
 @lru_cache
 def get_settings() -> Settings:

@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
@@ -88,9 +89,14 @@ export default function LoginPage() {
             </div>
 
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-foreground/80">
-                Senha
-              </label>
+              <div className="flex items-center justify-between">
+                <label className="mb-1.5 block text-sm font-medium text-foreground/80">
+                  Senha
+                </label>
+                <Link href="/forgot-password" className="text-xs text-primary hover:underline">
+                  Esqueci minha senha
+                </Link>
+              </div>
               <input
                 required
                 type="password"
@@ -116,6 +122,13 @@ export default function LoginPage() {
               {submitting ? "Entrando..." : "Entrar"}
             </motion.button>
           </form>
+
+          <p className="mt-6 text-center text-sm text-muted">
+            Não tem conta?{" "}
+            <Link href="/register" className="font-semibold text-primary hover:underline">
+              Criar conta
+            </Link>
+          </p>
         </motion.div>
       </div>
     </div>

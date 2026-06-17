@@ -15,6 +15,24 @@ async def get_user_by_email(db: AsyncSession, email: str) -> User | None:
     return result.scalar_one_or_none()
 
 
+async def create_user(db: AsyncSession, nome: str, email: str, senha: str) -> User:
+    user = User(
+        nome=nome,
+        email=email,
+        senha_hash=hash_password(senha),
+        role=UserRole.USER,
+        ativo=True,
+    )
+    db.add(user)
+    await db.commit()
+    return user
+
+
+async def update_user_password(db: AsyncSession, user: User, nova_senha: str) -> None:
+    user.senha_hash = hash_password(nova_senha)
+    await db.commit()
+
+
 async def seed_admin_user(db: AsyncSession) -> None:
     settings = get_settings()
     if not settings.admin_email or not settings.admin_password:
