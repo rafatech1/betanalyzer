@@ -4,8 +4,6 @@ from app.core.logging import get_logger
 from app.models.fixture import Fixture
 from app.models.odds import Odds
 from app.schemas.analysis_context import AnalysisContext, OddsContext
-from app.services.analysis.dixon_coles import MatchProbabilities
-from app.services.analysis.merge import match_probabilities_to_dict
 from app.services.analysis.qualitative_data import (
     summarize_h2h,
     summarize_injuries,
@@ -20,9 +18,10 @@ logger = get_logger(__name__)
 async def build_analysis_context(
     db: AsyncSession,
     fixture: Fixture,
-    probabilities: MatchProbabilities,
+    prob_modelo: dict[str, float],
     odds_rows: list[Odds],
     api_client: APIFootballClient,
+    modelo_estatistico_disponivel: bool = True,
     contexto_adicional: str | None = None,
 ) -> AnalysisContext:
     home_recent = await get_recent_finished_fixtures_for_team(db, fixture.time_casa_id)
@@ -67,7 +66,7 @@ async def build_analysis_context(
         time_fora=fixture.time_fora.nome,
         data_hora=fixture.data_hora,
         liga=fixture.league.nome,
-        prob_modelo=match_probabilities_to_dict(probabilities),
+        prob_modelo=prob_modelo,
         odds=odds_context,
         forma_casa=summarize_recent_form(home_recent),
         forma_fora=summarize_recent_form(away_recent),
@@ -75,4 +74,5 @@ async def build_analysis_context(
         lesoes_casa=lesoes_casa,
         lesoes_fora=lesoes_fora,
         contexto_adicional=contexto_adicional,
+        modelo_estatistico_disponivel=modelo_estatistico_disponivel,
     )

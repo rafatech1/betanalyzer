@@ -20,8 +20,26 @@ from app.services.analysis_repo import (
 from app.services.external.api_football import APIFootballClient
 from app.services.fixtures_repo import get_fixture_with_relations
 from app.services.model_prediction_repo import save_model_predictions
+from app.services.probability import remove_overround
 
 logger = get_logger(__name__)
+
+
+def _build_prob_modelo_from_odds(odds_rows: list) -> dict[str, float]:
+    """Estima probabilidades a partir das odds (sem overround) quando o
+    modelo Dixon-Coles não tem histórico suficiente para a liga — apenas um
+    ponto de partida ingênuo para o Claude refinar (Camada 2)."""
+    rows_by_market: dict[str, list] = {}
+    for row in odds_rows:
+        rows_by_market.setdefault(row.mercado, []).append(row)
+
+    prob_modelo: dict[str, float] = {}
+    for rows in rows_by_market.values():
+        probs = remove_overround([row.odd for row in rows])
+        for row, prob in zip(rows, probs):
+            prob_modelo[row.selecao] = prob
+
+    return prob_modelo
 
 
 def _check_cache(
@@ -52,25 +70,40 @@ async def _run_full_pipeline(db: AsyncSession, fixture_id: int, contexto_adicion
     if fixture is None:
         raise FixtureNotFoundError(f"Fixture {fixture_id} não encontrado")
 
-    ratings = await get_team_ratings(db, fixture.liga_id)
-    if ratings is None:
-        raise InsufficientModelDataError(
-            f"Histórico insuficiente para ajustar o modelo estatístico da liga {fixture.liga_id}"
-        )
-
-    probabilities = predict_match(ratings, fixture.time_casa_id, fixture.time_fora_id)
-    await save_model_predictions(db, fixture_id, probabilities)
-
     odds_rows = await get_latest_odds_by_selection(db, fixture_id)
+
+    ratings = await get_team_ratings(db, fixture.liga_id)
+    modelo_disponivel = ratings is not None
+
+    if modelo_disponivel:
+        probabilities = predict_match(ratings, fixture.time_casa_id, fixture.time_fora_id)
+        await save_model_predictions(db, fixture_id, probabilities)
+        model_probs = match_probabilities_to_dict(probabilities)
+    elif odds_rows:
+        # Sem histórico suficiente para o Dixon-Coles — usa a probabilidade
+        # implícita das odds como ponto de partida e deixa o Claude (Camada 2)
+        # estimar a probabilidade real (ver FALLBACK_SYSTEM_ADDENDUM).
+        logger.info("analysis_fallback_claude_only", fixture_id=fixture_id, liga_id=fixture.liga_id)
+        model_probs = _build_prob_modelo_from_odds(odds_rows)
+    else:
+        raise InsufficientModelDataError(
+            f"Histórico insuficiente para ajustar o modelo estatístico da liga {fixture.liga_id} "
+            "e nenhuma odd disponível para estimativa alternativa"
+        )
 
     api_client = APIFootballClient()
     context = await build_analysis_context(
-        db, fixture, probabilities, odds_rows, api_client, contexto_adicional
+        db,
+        fixture,
+        model_probs,
+        odds_rows,
+        api_client,
+        modelo_estatistico_disponivel=modelo_disponivel,
+        contexto_adicional=contexto_adicional,
     )
 
     claude_result = await analyze_with_claude(context)
 
-    model_probs = match_probabilities_to_dict(probabilities)
     final_probs = merge_probabilities(model_probs, claude_result.ajuste_probabilidades)
 
     rows: list[Analysis] = []

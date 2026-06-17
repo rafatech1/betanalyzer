@@ -25,3 +25,8 @@ class AnalysisContext(BaseModel):
     lesoes_casa: list[str] = []
     lesoes_fora: list[str] = []
     contexto_adicional: str | None = None
+    # False quando a liga não tem histórico suficiente para o modelo
+    # Dixon-Coles (Camada 1) — nesse caso `prob_modelo` vem da probabilidade
+    # implícita das odds (sem overround), não de um modelo ajustado, e o
+    # Claude deve estimar a probabilidade diretamente em vez de só refinar.
+    modelo_estatistico_disponivel: bool = True

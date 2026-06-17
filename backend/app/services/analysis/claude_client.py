@@ -2,6 +2,7 @@ from anthropic import AsyncAnthropic
 
 from app.core.config import get_settings
 from app.core.logging import get_logger
+from app.models.analysis import NivelConfianca
 from app.schemas.analysis_context import AnalysisContext
 from app.schemas.claude_result import ClaudeAnalysisResult
 
@@ -28,6 +29,27 @@ e a incerteza envolvida — não apenas uma previsão de resultado.
 - Sempre que possível, aponte riscos concretos (ex.: desfalques importantes, jogo sem \
 motivação, viagem longa, mando de campo neutro)."""
 
+# Acrescentado ao SYSTEM_PROMPT quando a liga não tem histórico suficiente
+# para o modelo Dixon-Coles (Camada 1) — Claude passa a ser a única fonte de
+# probabilidade, não apenas um refinamento sobre um modelo já ajustado.
+FALLBACK_SYSTEM_ADDENDUM = """
+
+ATENÇÃO — não há modelo estatístico ajustado para este jogo (histórico insuficiente de \
+jogos da liga). As "probabilidades" fornecidas abaixo são apenas a probabilidade implícita \
+das odds (sem a margem da casa) — um ponto de partida ingênuo do mercado, não uma estimativa \
+de um modelo ajustado. Você deve estimar a probabilidade real de cada resultado usando seu \
+conhecimento geral de futebol (força relativa dos times, rankings, fase da competição, \
+contexto de calendário, motivação etc.), preenchendo `ajuste_probabilidades` com sua \
+estimativa completa para todas as seleções relevantes — não apenas ajustes incrementais."""
+
+# Inserido no início do resumo quando o fallback é usado — garante o aviso
+# independentemente do que o texto gerado pelo Claude diga (item 5 do
+# requisito: o resumo deve mencionar a falta de histórico do modelo).
+FALLBACK_RESUMO_DISCLAIMER = (
+    "Modelo estatístico sem histórico suficiente para esta liga; "
+    "estimativa baseada apenas em análise qualitativa."
+)
+
 
 def _format_odds(context: AnalysisContext) -> str:
     if not context.odds:
@@ -48,11 +70,19 @@ def build_user_prompt(context: AnalysisContext) -> str:
         f"- {selecao}: {prob:.1%}" for selecao, prob in context.prob_modelo.items()
     )
 
+    if context.modelo_estatistico_disponivel:
+        prob_label = "Probabilidades do modelo estatístico (Dixon-Coles):"
+    else:
+        prob_label = (
+            "Probabilidades implícitas das odds — SEM modelo estatístico ajustado "
+            "(histórico insuficiente da liga), use apenas como ponto de partida:"
+        )
+
     return f"""Jogo: {context.time_casa} (casa) x {context.time_fora} (fora)
 Liga: {context.liga}
 Data/hora: {context.data_hora.isoformat()}
 
-Probabilidades do modelo estatístico (Dixon-Coles):
+{prob_label}
 {prob_modelo}
 
 Odds disponíveis e probabilidades implícitas (sem margem da casa):
@@ -127,10 +157,14 @@ async def analyze_with_claude(context: AnalysisContext) -> ClaudeAnalysisResult:
     settings = get_settings()
     client = AsyncAnthropic(api_key=settings.anthropic_api_key)
 
+    system_prompt = SYSTEM_PROMPT
+    if not context.modelo_estatistico_disponivel:
+        system_prompt += FALLBACK_SYSTEM_ADDENDUM
+
     message = await client.messages.create(
         model=CLAUDE_MODEL,
         max_tokens=MAX_TOKENS,
-        system=SYSTEM_PROMPT,
+        system=system_prompt,
         tools=[ANALYSIS_TOOL],
         tool_choice={"type": "tool", "name": "submit_analysis"},
         messages=[{"role": "user", "content": build_user_prompt(context)}],
@@ -143,4 +177,14 @@ async def analyze_with_claude(context: AnalysisContext) -> ClaudeAnalysisResult:
         logger.error("claude_no_tool_use_block", fixture_id=context.fixture_id)
         raise ValueError("Claude não retornou um bloco tool_use com a análise estruturada")
 
-    return ClaudeAnalysisResult.model_validate(tool_use_block.input)
+    result = ClaudeAnalysisResult.model_validate(tool_use_block.input)
+
+    if not context.modelo_estatistico_disponivel:
+        result = result.model_copy(
+            update={
+                "confianca": NivelConfianca.BAIXA,
+                "resumo": f"{FALLBACK_RESUMO_DISCLAIMER} {result.resumo}",
+            }
+        )
+
+    return result
