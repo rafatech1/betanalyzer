@@ -16,7 +16,7 @@ const PERIOD_LABELS: Record<FixturePeriod, string> = {
 };
 
 export default function DashboardPage() {
-  const [period, setPeriod] = useState<FixturePeriod>("today");
+  const [period, setPeriod] = useState<FixturePeriod>("week");
   const [leagueId, setLeagueId] = useState<number | "">("");
   const [pais, setPais] = useState<string>("");
   const [busca, setBusca] = useState("");

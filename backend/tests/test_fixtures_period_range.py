@@ -12,12 +12,14 @@ def test_today_range_starts_at_now_not_midnight() -> None:
     assert range_end == datetime.combine(now.date(), time.max, tzinfo=timezone.utc)
 
 
-def test_week_range_starts_at_midnight_of_today() -> None:
+def test_week_range_starts_at_now_not_midnight() -> None:
+    # Janela deslizante: hoje quarta 17/06 às 14:30 -> mostra até terça 23/06
+    # (hoje + 6 dias), não jogos já começados hoje.
     now = datetime(2026, 6, 17, 14, 30, tzinfo=timezone.utc)
 
     range_start, range_end = _resolve_date_range(Period.week, now)
 
-    assert range_start == datetime.combine(now.date(), time.min, tzinfo=timezone.utc)
+    assert range_start == now
     assert range_end == datetime.combine(
         now.date() + timedelta(days=6), time.max, tzinfo=timezone.utc
     )
