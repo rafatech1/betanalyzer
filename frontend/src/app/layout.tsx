@@ -1,11 +1,22 @@
 import type { Metadata } from "next";
+import { Inter, JetBrains_Mono } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
 
-import { AuthGuard } from "@/components/AuthGuard";
-import { NavBar } from "@/components/NavBar";
-import { ResponsibleGamingFooter } from "@/components/ResponsibleGamingFooter";
+import { AppShell } from "@/components/AppShell";
 import { AuthProvider } from "@/contexts/AuthContext";
+
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+  display: "swap",
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ["latin"],
+  variable: "--font-jetbrains-mono",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "BetAnalyzer",
@@ -18,17 +29,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="pt-BR">
+    <html lang="pt-BR" className={`${inter.variable} ${jetbrainsMono.variable}`}>
       <head>
         <Script src="/env-config.js" strategy="beforeInteractive" />
       </head>
-      <body className="bg-background text-foreground min-h-screen">
+      <body className="min-h-screen bg-background font-sans text-foreground">
         <AuthProvider>
-          <NavBar />
-          <main className="mx-auto max-w-6xl px-4 pb-16 pt-6">
-            <AuthGuard>{children}</AuthGuard>
-          </main>
-          <ResponsibleGamingFooter />
+          <AppShell>{children}</AppShell>
         </AuthProvider>
       </body>
     </html>

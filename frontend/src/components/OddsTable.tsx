@@ -24,7 +24,7 @@ export function OddsTable({ odds }: { odds: Odds[] }) {
   }
 
   if (byMarket.size === 0) {
-    return <p className="text-sm text-foreground/50">Nenhuma odd disponível ainda.</p>;
+    return <p className="text-sm text-muted">Nenhuma odd disponível ainda.</p>;
   }
 
   return (
@@ -38,11 +38,13 @@ export function OddsTable({ odds }: { odds: Odds[] }) {
             {rows.map((row) => (
               <div
                 key={row.id}
-                className="rounded-md border border-foreground/10 bg-[#161616] p-2 text-center"
+                className="card-gradient-border rounded-lg border border-border bg-surface p-3 text-center transition-colors hover:bg-surface-hover"
               >
-                <p className="text-xs text-foreground/50">{row.selecao}</p>
-                <p className="text-lg font-semibold">{row.odd.toFixed(2)}</p>
-                <p className="text-[10px] text-foreground/40">
+                <p className="text-xs text-muted">{row.selecao}</p>
+                <p className="font-mono text-lg font-semibold text-foreground">
+                  {row.odd.toFixed(2)}
+                </p>
+                <p className="mt-0.5 text-[10px] text-muted">
                   {row.casa_de_aposta} · prob. impl. {(row.prob_implicita * 100).toFixed(1)}%
                 </p>
               </div>

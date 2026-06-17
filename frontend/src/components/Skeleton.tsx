@@ -1,10 +1,12 @@
 export function Skeleton({ className = "" }: { className?: string }) {
-  return <div className={`animate-pulse rounded-md bg-foreground/10 ${className}`} />;
+  return (
+    <div className={`skeleton-shimmer animate-shimmer rounded-md ${className}`} />
+  );
 }
 
 export function GameCardSkeleton() {
   return (
-    <div className="rounded-lg border border-foreground/10 bg-[#161616] p-4">
+    <div className="rounded-xl border border-border bg-surface p-4">
       <div className="flex items-center justify-between">
         <Skeleton className="h-3 w-24" />
         <Skeleton className="h-3 w-16" />
@@ -25,7 +27,7 @@ export function GameCardSkeleton() {
 
 export function AnalysisSkeleton() {
   return (
-    <div className="space-y-3 rounded-lg border border-foreground/10 bg-[#161616] p-4">
+    <div className="space-y-3 rounded-xl border border-border bg-surface p-4">
       <Skeleton className="h-4 w-1/3" />
       <Skeleton className="h-3 w-full" />
       <Skeleton className="h-3 w-5/6" />

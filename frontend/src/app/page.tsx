@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { fetchFixtures, fetchLeagues, type FixturePeriod } from "@/lib/api";
 import { GameCard } from "@/components/GameCard";
 import { GameCardSkeleton } from "@/components/Skeleton";
+import { StatCard } from "@/components/StatCard";
 import type { Fixture } from "@/types/fixture";
 import type { League } from "@/types/odds";
 
@@ -62,22 +63,41 @@ export default function DashboardPage() {
     [leagues]
   );
 
+  const live = useMemo(
+    () => fixtures.filter((f) => f.status === "em_andamento").length,
+    [fixtures]
+  );
+
   return (
     <div className="space-y-6">
-      <div className="rounded-lg border border-primary/40 bg-primary/10 p-3 text-xs text-foreground/80">
+      <div>
+        <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
+        <p className="text-sm text-muted">Jogos monitorados e oportunidades de EV+.</p>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <StatCard label="Jogos no período" value={fixtures.length} accent="primary" format={(v) => v.toFixed(0)} />
+        <StatCard label="Em andamento" value={live} accent="positive" format={(v) => v.toFixed(0)} />
+        <StatCard label="Ligas disponíveis" value={leagues.length} accent="gold" format={(v) => v.toFixed(0)} />
+        <StatCard label="Países" value={countries.length} accent="neutral" format={(v) => v.toFixed(0)} />
+      </div>
+
+      <div className="card-gradient-border rounded-xl border border-primary/30 bg-primary/5 p-4 text-xs text-foreground/80">
         <strong className="text-primary">BetAnalyzer</strong> identifica apostas com valor
         esperado positivo (EV+), comparando a probabilidade do modelo com a probabilidade
         implícita das odds sem a margem da casa. Isto não é garantia de resultado.
       </div>
 
       <div className="flex flex-wrap items-end gap-3">
-        <div className="flex gap-1 rounded-md bg-foreground/5 p-1">
+        <div className="flex gap-1 rounded-lg border border-border bg-surface p-1">
           {(Object.keys(PERIOD_LABELS) as FixturePeriod[]).map((p) => (
             <button
               key={p}
               onClick={() => setPeriod(p)}
-              className={`rounded-md px-3 py-1.5 text-sm transition ${
-                period === p ? "bg-primary text-black font-semibold" : "text-foreground/70"
+              className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+                period === p
+                  ? "bg-gradient-primary text-background"
+                  : "text-muted hover:text-foreground"
               }`}
             >
               {PERIOD_LABELS[p]}
@@ -88,7 +108,7 @@ export default function DashboardPage() {
         <select
           value={leagueId}
           onChange={(e) => setLeagueId(e.target.value === "" ? "" : Number(e.target.value))}
-          className="rounded-md border border-foreground/20 bg-[#161616] px-3 py-1.5 text-sm"
+          className="rounded-lg border border-border bg-surface px-3 py-1.5 text-sm text-foreground outline-none focus:border-primary"
         >
           <option value="">Todas as ligas</option>
           {leagues.map((league) => (
@@ -101,7 +121,7 @@ export default function DashboardPage() {
         <select
           value={pais}
           onChange={(e) => setPais(e.target.value)}
-          className="rounded-md border border-foreground/20 bg-[#161616] px-3 py-1.5 text-sm"
+          className="rounded-lg border border-border bg-surface px-3 py-1.5 text-sm text-foreground outline-none focus:border-primary"
         >
           <option value="">Todos os países</option>
           {countries.map((country) => (
@@ -116,12 +136,12 @@ export default function DashboardPage() {
           placeholder="Buscar time..."
           value={busca}
           onChange={(e) => setBusca(e.target.value)}
-          className="flex-1 min-w-[180px] rounded-md border border-foreground/20 bg-[#161616] px-3 py-1.5 text-sm placeholder:text-foreground/40"
+          className="min-w-[180px] flex-1 rounded-lg border border-border bg-surface px-3 py-1.5 text-sm text-foreground outline-none placeholder:text-muted focus:border-primary"
         />
       </div>
 
       {error && (
-        <div className="rounded-md border border-ev-negative/40 bg-ev-negative/10 p-3 text-sm text-ev-negative">
+        <div className="rounded-lg border border-ev-negative/30 bg-ev-negative/10 p-3 text-sm text-ev-negative">
           Erro ao carregar jogos: {error}
         </div>
       )}
@@ -133,7 +153,7 @@ export default function DashboardPage() {
       </div>
 
       {!loading && fixtures.length === 0 && !error && (
-        <p className="py-8 text-center text-sm text-foreground/50">
+        <p className="py-8 text-center text-sm text-muted">
           Nenhum jogo encontrado para os filtros selecionados.
         </p>
       )}
