@@ -7,6 +7,7 @@ import { useParams } from "next/navigation";
 import { analyzeFixture, fetchFixture, fetchFixtureDetails, fetchFixtureOdds } from "@/lib/api";
 import { AnalysisResultCard } from "@/components/AnalysisResultCard";
 import { AnalysisSkeleton, Skeleton } from "@/components/Skeleton";
+import { ClaudeSummaryCard } from "@/components/ClaudeSummaryCard";
 import { OddsTable } from "@/components/OddsTable";
 import type { Analysis } from "@/types/analysis";
 import type { Fixture, FixtureDetails } from "@/types/fixture";
@@ -70,6 +71,8 @@ export default function FixturePage() {
     );
   }
 
+  const claudeResumo = analyses?.find((a) => a.resumo_ia)?.resumo_ia ?? null;
+
   if (loadError || !fixture) {
     return (
       <p className="rounded-lg border border-ev-negative/30 bg-ev-negative/10 p-3 text-sm text-ev-negative">
@@ -126,20 +129,25 @@ export default function FixturePage() {
             )}
 
             {!analyzing && analyses && (
-              <div className="space-y-3">
-                {avisoRisco && (
-                  <p className="rounded-lg border border-primary/30 bg-primary/10 p-3 text-xs text-foreground/80">
-                    {avisoRisco}
-                  </p>
-                )}
+              <div className="space-y-4">
+                {claudeResumo && <ClaudeSummaryCard resumo={claudeResumo} />}
+
                 {analyses.length === 0 ? (
                   <p className="text-sm text-muted">
                     Nenhuma odd disponível para gerar uma recomendação ainda.
                   </p>
                 ) : (
-                  analyses.map((analysis) => (
-                    <AnalysisResultCard key={analysis.id} analysis={analysis} />
-                  ))
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    {analyses.map((analysis, index) => (
+                      <AnalysisResultCard key={analysis.id} analysis={analysis} index={index} />
+                    ))}
+                  </div>
+                )}
+
+                {avisoRisco && (
+                  <p className="rounded-lg border border-primary/30 bg-primary/10 p-3 text-xs text-foreground/80">
+                    {avisoRisco}
+                  </p>
                 )}
               </div>
             )}
