@@ -29,7 +29,14 @@ class Bet(Base):
     odd: Mapped[float] = mapped_column(Float, nullable=False)
     stake: Mapped[float] = mapped_column(Float, nullable=False)
     resultado: Mapped[ResultadoAposta] = mapped_column(
-        Enum(ResultadoAposta, name="resultado_aposta"),
+        # values_callable é necessário porque o SQLAlchemy, por padrão, usa o
+        # NOME do membro do enum para o valor no banco, não o .value — mesmo
+        # bug corrigido em UserRole (ver app/models/user.py).
+        Enum(
+            ResultadoAposta,
+            name="resultado_aposta",
+            values_callable=lambda enum_cls: [e.value for e in enum_cls],
+        ),
         nullable=False,
         default=ResultadoAposta.PENDENTE,
     )

@@ -21,7 +21,15 @@ class Bankroll(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
     tipo: Mapped[TipoMovimento] = mapped_column(
-        Enum(TipoMovimento, name="tipo_movimento"), nullable=False
+        # values_callable é necessário porque o SQLAlchemy, por padrão, usa o
+        # NOME do membro do enum para o valor no banco, não o .value — mesmo
+        # bug corrigido em UserRole (ver app/models/user.py).
+        Enum(
+            TipoMovimento,
+            name="tipo_movimento",
+            values_callable=lambda enum_cls: [e.value for e in enum_cls],
+        ),
+        nullable=False,
     )
     valor: Mapped[float] = mapped_column(Float, nullable=False)
     saldo_resultante: Mapped[float] = mapped_column(Float, nullable=False)
