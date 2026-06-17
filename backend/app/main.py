@@ -20,7 +20,7 @@ logger = get_logger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    logger.info("startup", environment=settings.environment)
+    logger.info("startup", environment=settings.environment, cors_origins=settings.cors_origins)
     async with AsyncSessionLocal() as session:
         await seed_admin_user(session)
     start_scheduler()
@@ -33,6 +33,10 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title=settings.app_name, lifespan=lifespan)
 
+# allow_credentials=True exige origens explícitas em allow_origins — nunca
+# "*" — senão o browser rejeita a resposta. allow_methods/allow_headers="*"
+# cobre o preflight OPTIONS (inclusive o método OPTIONS em si e os headers
+# Content-Type/Authorization usados pelo frontend).
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins,

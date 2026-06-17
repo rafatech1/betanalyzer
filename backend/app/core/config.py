@@ -1,6 +1,21 @@
+import json
 from functools import lru_cache
 
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+def _parse_cors_origins(raw: str) -> list[str]:
+    # CORS_ORIGINS no .env é esperado em JSON (ex.: ["https://app.x.com"]),
+    # mas aceita também uma lista separada por vírgulas como fallback.
+    try:
+        origins = json.loads(raw)
+    except json.JSONDecodeError:
+        origins = [origin.strip() for origin in raw.split(",") if origin.strip()]
+    # O header `Origin` enviado pelo browser nunca tem barra final; uma
+    # origem configurada com "/" no final nunca daria match e o
+    # CORSMiddleware rejeitaria o preflight com 400 silenciosamente.
+    return [str(origin).rstrip("/") for origin in origins]
 
 
 class Settings(BaseSettings):
@@ -32,7 +47,17 @@ class Settings(BaseSettings):
     # IDs de ligas da API-Football a monitorar (ex.: [71, 39]). Vazio = busca global por dia.
     monitored_league_ids: list[int] = []
 
-    cors_origins: list[str] = ["http://localhost:3000"]
+    # Campo cru como string (não list[str]) de propósito: o pydantic-settings
+    # tenta decodificar campos de lista lidos do .env como JSON ANTES de
+    # qualquer validador rodar, e derruba a app inteira no startup se o
+    # formato não for um JSON estrito — o que é fácil de errar num .env
+    # (ex.: sem colchetes, ou separado só por vírgula). Mantendo como string
+    # aqui, o parsing fica sob nosso controle em `cors_origins` abaixo.
+    cors_origins_raw: str = Field(default='["http://localhost:3000"]', alias="cors_origins")
+
+    @property
+    def cors_origins(self) -> list[str]:
+        return _parse_cors_origins(self.cors_origins_raw)
 
     # Kelly fracionado: nunca apostar mais que esta fração do Kelly completo.
     max_kelly_fraction: float = 0.25
