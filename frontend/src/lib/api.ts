@@ -6,7 +6,22 @@ import type { Fixture, FixtureDetails } from "@/types/fixture";
 import type { League, Odds } from "@/types/odds";
 import type { AppSettings, AppSettingsUpdate } from "@/types/settings";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+declare global {
+  interface Window {
+    __ENV__?: { API_URL?: string };
+  }
+}
+
+// Lido em runtime de public/env-config.js (gerado no startup do container),
+// e não em build-time via process.env.NEXT_PUBLIC_API_URL — o Dockerfile do
+// frontend builda a imagem sem acesso ao .env real da VPS, então uma URL
+// embutida no bundle no build sempre apontaria para o valor de dev/local.
+function getApiBaseUrl(): string {
+  if (typeof window !== "undefined" && window.__ENV__?.API_URL) {
+    return window.__ENV__.API_URL;
+  }
+  return "http://localhost:8000";
+}
 
 let accessToken: string | null = null;
 
@@ -25,7 +40,7 @@ async function rawRequest(path: string, init?: RequestInit): Promise<Response> {
   };
   if (accessToken) headers["Authorization"] = `Bearer ${accessToken}`;
 
-  return fetch(`${API_BASE_URL}${path}`, {
+  return fetch(`${getApiBaseUrl()}${path}`, {
     cache: "no-store",
     credentials: "include",
     ...init,

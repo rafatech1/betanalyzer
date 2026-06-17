@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Script from "next/script";
 import "./globals.css";
 
 import { AuthGuard } from "@/components/AuthGuard";
@@ -18,6 +19,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="pt-BR">
+      <head>
+        <Script src="/env-config.js" strategy="beforeInteractive" />
+      </head>
       <body className="bg-background text-foreground min-h-screen">
         <AuthProvider>
           <NavBar />
