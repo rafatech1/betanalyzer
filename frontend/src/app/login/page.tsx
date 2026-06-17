@@ -32,15 +32,17 @@ export default function LoginPage() {
 
   return (
     <div className="grid min-h-screen lg:grid-cols-2">
-      <div className="relative hidden flex-col justify-between overflow-hidden bg-gradient-to-br from-[#0F1624] via-background to-background p-12 lg:flex">
+      <div className="relative flex flex-col items-center overflow-hidden bg-gradient-to-br from-[#0F1624] via-background to-background px-6 py-10 text-center lg:min-h-screen lg:items-start lg:justify-between lg:p-12 lg:text-left">
         <div className="pointer-events-none absolute inset-0 bg-gradient-radial-glow" />
         <div className="pointer-events-none absolute -right-24 -top-24 h-96 w-96 rounded-full bg-primary/10 blur-3xl" />
         <div className="pointer-events-none absolute bottom-0 left-0 h-72 w-72 rounded-full bg-gold/10 blur-3xl" />
 
-        <Logo size={40} />
+        <div className="relative z-10">
+          <Logo size={36} />
+        </div>
 
-        <div className="relative z-10 max-w-md space-y-4">
-          <h1 className="text-4xl font-bold leading-tight text-foreground">
+        <div className="relative z-10 my-6 max-w-md space-y-4 lg:my-0">
+          <h1 className="text-3xl font-bold leading-tight text-foreground lg:text-4xl">
             Aposte com <span className="text-primary">valor</span>, não com sorte.
           </h1>
           <p className="text-sm leading-relaxed text-muted">
@@ -48,7 +50,7 @@ export default function LoginPage() {
             implícita das odds — já sem a margem da casa — para identificar oportunidades
             reais de EV+ no futebol.
           </p>
-          <div className="flex gap-6 pt-2">
+          <div className="flex justify-center gap-6 pt-2 lg:justify-start">
             <StatPreview label="EV médio" value="+4.2%" accent="text-ev-positive" />
             <StatPreview label="Yield" value="+2.8%" accent="text-gold" />
             <StatPreview label="ROI" value="+11.6%" accent="text-primary" />
@@ -67,10 +69,6 @@ export default function LoginPage() {
           transition={{ duration: 0.35 }}
           className="w-full max-w-sm"
         >
-          <div className="mb-8 lg:hidden">
-            <Logo size={36} />
-          </div>
-
           <h2 className="text-2xl font-bold text-foreground">Bem-vindo de volta</h2>
           <p className="mt-1 text-sm text-muted">Entre com sua conta para continuar.</p>
 
