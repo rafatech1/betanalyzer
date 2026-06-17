@@ -6,8 +6,8 @@ export function EvBadge({ ev }: { ev: number }) {
     <span
       className={`inline-flex items-center rounded-full px-2.5 py-1 font-mono text-xs font-semibold ${
         isPositive
-          ? "bg-ev-positive/15 text-ev-positive shadow-glow-positive"
-          : "bg-ev-negative/15 text-ev-negative shadow-glow-negative"
+          ? "bg-[#0b3b30] text-ev-positive shadow-glow-positive"
+          : "bg-[#3b0f16] text-ev-negative shadow-glow-negative"
       }`}
     >
       EV {isPositive ? "+" : ""}

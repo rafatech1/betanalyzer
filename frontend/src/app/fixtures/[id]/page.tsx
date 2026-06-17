@@ -10,7 +10,7 @@ import { AnalysisResultCard } from "@/components/AnalysisResultCard";
 import { AnalysisSkeleton, Skeleton } from "@/components/Skeleton";
 import { ClaudeSummaryCard } from "@/components/ClaudeSummaryCard";
 import { FixtureHeader } from "@/components/FixtureHeader";
-import { IconBolt } from "@/components/icons";
+import { IconAlertTriangle, IconBolt } from "@/components/icons";
 import { OddsTable } from "@/components/OddsTable";
 import type { Analysis } from "@/types/analysis";
 import type { Fixture, FixtureDetails } from "@/types/fixture";
@@ -83,6 +83,9 @@ export default function FixturePage() {
   }
 
   const claudeResumo = analyses?.find((a) => a.resumo_ia)?.resumo_ia ?? null;
+  // EV+ (apostar/observar) primeiro, EV- (evitar) depois — ev > 0 sempre
+  // corresponde a apostar/observar e ev <= 0 a evitar (ver pipeline.py).
+  const sortedAnalyses = analyses ? [...analyses].sort((a, b) => b.ev - a.ev) : null;
   const hasContext = Boolean(
     details?.forma_casa ||
       details?.forma_fora ||
@@ -126,28 +129,36 @@ export default function FixturePage() {
           </div>
         )}
 
-        {!analyzing && analyses && (
+        {!analyzing && sortedAnalyses && (
           <div className="space-y-4">
             <h2 className="text-sm font-semibold text-foreground/80">Análise EV+</h2>
 
             {claudeResumo && <ClaudeSummaryCard resumo={claudeResumo} />}
 
-            {analyses.length === 0 ? (
+            {sortedAnalyses.length === 0 ? (
               <p className="text-sm text-muted">
                 Nenhuma odd disponível para gerar uma recomendação ainda.
               </p>
             ) : (
               <div className="grid gap-4 md:grid-cols-2">
-                {analyses.map((analysis, index) => (
-                  <AnalysisResultCard key={analysis.id} analysis={analysis} index={index} />
+                {sortedAnalyses.map((analysis, index) => (
+                  <AnalysisResultCard
+                    key={analysis.id}
+                    analysis={analysis}
+                    index={index}
+                    fullWidth={
+                      sortedAnalyses.length % 2 === 1 && index === sortedAnalyses.length - 1
+                    }
+                  />
                 ))}
               </div>
             )}
 
             {avisoRisco && (
-              <p className="rounded-lg border border-primary/30 bg-primary/10 p-3 text-xs text-foreground/80">
-                {avisoRisco}
-              </p>
+              <div className="flex items-start gap-2 rounded-lg border border-gold/20 bg-gold/10 px-3 py-2 text-xs text-foreground/80">
+                <IconAlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-gold" />
+                <p>{avisoRisco}</p>
+              </div>
             )}
           </div>
         )}

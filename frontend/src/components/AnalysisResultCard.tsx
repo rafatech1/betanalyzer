@@ -12,16 +12,20 @@ import type { Analysis } from "@/types/analysis";
 export function AnalysisResultCard({
   analysis,
   index = 0,
+  fullWidth = false,
 }: {
   analysis: Analysis;
   index?: number;
+  fullWidth?: boolean;
 }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35, delay: index * 0.06 }}
-      className="card-gradient-border flex flex-col rounded-xl border border-border bg-surface p-5"
+      className={`card-gradient-border flex flex-col rounded-xl border border-border bg-surface p-5 ${
+        fullWidth ? "md:col-span-2" : ""
+      }`}
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
         <span className="text-sm font-semibold">
@@ -40,12 +44,12 @@ export function AnalysisResultCard({
         />
       </div>
 
-      <div className="mt-2">
-        <ProbabilityCompareBar
-          probModelo={analysis.prob_estimada}
-          probImplicita={analysis.prob_implicita}
-        />
-      </div>
+      <div className="my-3 border-t border-border" />
+
+      <ProbabilityCompareBar
+        probModelo={analysis.prob_estimada}
+        probImplicita={analysis.prob_implicita}
+      />
 
       <div className="mt-5 grid grid-cols-3 items-end gap-3 border-t border-border pt-4 text-center">
         <div>

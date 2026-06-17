@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 
+import { getFlagUrl } from "@/lib/teamFlags";
 import type { Fixture } from "@/types/fixture";
 
 const STATUS_LABELS: Record<Fixture["status"], string> = {
@@ -45,6 +46,20 @@ function colorFor(nome: string): string {
 }
 
 function TeamBadge({ nome }: { nome: string }) {
+  const flagUrl = getFlagUrl(nome);
+
+  if (flagUrl) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element -- domínio externo (flagcdn.com), sem necessidade de otimização do next/image
+      <img
+        src={flagUrl}
+        alt={`Bandeira de ${nome}`}
+        loading="lazy"
+        className="h-16 w-16 shrink-0 rounded-full border border-border object-cover shadow-glow sm:h-20 sm:w-20"
+      />
+    );
+  }
+
   return (
     <div
       className={`flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-gradient-to-br text-xl font-bold text-background shadow-glow sm:h-20 sm:w-20 sm:text-2xl ${colorFor(nome)}`}

@@ -82,3 +82,18 @@ export function IconSparkles({ className }: IconProps) {
     </svg>
   );
 }
+
+export function IconAlertTriangle({ className }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className}>
+      <path
+        d="M12 3.5 21 19H3L12 3.5Z"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinejoin="round"
+      />
+      <path d="M12 9.5v4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      <circle cx="12" cy="16.3" r="0.9" fill="currentColor" />
+    </svg>
+  );
+}

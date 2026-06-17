@@ -23,7 +23,7 @@ export function ProbabilityCompareBar({ probModelo, probImplicita }: Probability
             transition={{ duration: 0.7, ease: "easeOut" }}
           />
         </div>
-        <span className="w-12 shrink-0 text-right font-mono text-xs font-semibold text-primary">
+        <span className="w-14 shrink-0 text-right font-mono text-sm font-semibold text-primary">
           {modeloPct.toFixed(1)}%
         </span>
       </div>
@@ -37,7 +37,7 @@ export function ProbabilityCompareBar({ probModelo, probImplicita }: Probability
             transition={{ duration: 0.7, ease: "easeOut", delay: 0.1 }}
           />
         </div>
-        <span className="w-12 shrink-0 text-right font-mono text-xs font-semibold text-muted">
+        <span className="w-14 shrink-0 text-right font-mono text-sm font-semibold text-muted">
           {implicitaPct.toFixed(1)}%
         </span>
       </div>
