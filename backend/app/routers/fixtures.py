@@ -1,4 +1,4 @@
-from datetime import date, datetime, time, timedelta, timezone
+from datetime import datetime, time, timedelta, timezone
 from enum import Enum
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -34,6 +34,22 @@ class Period(str, Enum):
 
 
 _PERIOD_DAYS_AHEAD = {Period.today: 0, Period.week: 6, Period.month: 29}
+
+
+def _resolve_date_range(period: Period, now: datetime) -> tuple[datetime, datetime]:
+    """Calcula o range [início, fim] usado para filtrar fixtures por período.
+
+    Para "hoje", o início do range é o instante atual (não a meia-noite) —
+    jogos que já começaram ou terminaram não devem aparecer na listagem do
+    dia. Para semana/mês, o início continua sendo a meia-noite de hoje, já
+    que esses períodos mais amplos ainda devem incluir jogos em
+    andamento/finalizados de hoje (o frontend decide como exibi-los)."""
+    today = now.date()
+    end_date = today + timedelta(days=_PERIOD_DAYS_AHEAD[period])
+
+    range_start = now if period == Period.today else datetime.combine(today, time.min, tzinfo=timezone.utc)
+    range_end = datetime.combine(end_date, time.max, tzinfo=timezone.utc)
+    return range_start, range_end
 
 
 async def _attach_odds_preview(
@@ -83,11 +99,7 @@ async def list_fixtures(
     busca: str | None = None,
     db: AsyncSession = Depends(get_db),
 ) -> list[FixtureOut]:
-    today = date.today()
-    end_date = today + timedelta(days=_PERIOD_DAYS_AHEAD[period])
-
-    range_start = datetime.combine(today, time.min, tzinfo=timezone.utc)
-    range_end = datetime.combine(end_date, time.max, tzinfo=timezone.utc)
+    range_start, range_end = _resolve_date_range(period, datetime.now(timezone.utc))
 
     stmt = (
         select(Fixture)

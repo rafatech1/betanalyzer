@@ -42,7 +42,7 @@ export default function DashboardPage() {
         busca: busca || undefined,
       })
         .then((data) => {
-          if (!cancelled) setFixtures(data);
+          if (!cancelled) setFixtures(data.filter((f) => f.status !== "finalizada"));
         })
         .catch((err: Error) => {
           if (!cancelled) setError(err.message);
