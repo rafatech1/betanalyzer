@@ -28,7 +28,7 @@ export function OddsTable({ odds }: { odds: Odds[] }) {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="grid gap-4 lg:grid-cols-2">
       {Array.from(byMarket.entries()).map(([mercado, rows]) => (
         <div key={mercado}>
           <h3 className="mb-2 text-sm font-semibold text-foreground/80">

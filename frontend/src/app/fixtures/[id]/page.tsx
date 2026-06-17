@@ -103,13 +103,13 @@ export default function FixturePage() {
           </section>
 
           <section className="space-y-3">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap items-center justify-between gap-3">
               <h2 className="text-sm font-semibold text-foreground/80">Análise EV+</h2>
               <motion.button
                 whileTap={{ scale: 0.97 }}
                 onClick={handleAnalyze}
                 disabled={analyzing}
-                className="rounded-lg bg-gradient-primary px-4 py-2 text-sm font-semibold text-background shadow-glow transition-opacity hover:opacity-90 disabled:opacity-50"
+                className="min-h-[44px] rounded-lg bg-gradient-primary px-4 py-2 text-sm font-semibold text-background shadow-glow transition-opacity hover:opacity-90 disabled:opacity-50"
               >
                 {analyzing ? "Analisando..." : "Analisar jogo"}
               </motion.button>
@@ -137,7 +137,7 @@ export default function FixturePage() {
                     Nenhuma odd disponível para gerar uma recomendação ainda.
                   </p>
                 ) : (
-                  <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="grid gap-4 md:grid-cols-2">
                     {analyses.map((analysis, index) => (
                       <AnalysisResultCard key={analysis.id} analysis={analysis} index={index} />
                     ))}

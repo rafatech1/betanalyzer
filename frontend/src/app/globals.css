@@ -50,6 +50,16 @@ body {
   opacity: 1;
 }
 
+/* Esconde a scrollbar em listas horizontais roláveis (ex: pills de período) */
+.scroll-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scroll-hide::-webkit-scrollbar {
+  display: none;
+}
+
 /* Shimmer para skeleton loaders */
 .skeleton-shimmer {
   background: linear-gradient(

@@ -103,7 +103,7 @@ export default function SettingsPage() {
               step="0.01"
               value={form.bancaInicial}
               onChange={(e) => setForm({ ...form, bancaInicial: e.target.value })}
-              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+              className="min-h-[44px] w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
             />
           </Field>
 
@@ -115,7 +115,7 @@ export default function SettingsPage() {
               max="100"
               value={form.kelly}
               onChange={(e) => setForm({ ...form, kelly: e.target.value })}
-              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+              className="min-h-[44px] w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
             />
           </Field>
 
@@ -125,7 +125,7 @@ export default function SettingsPage() {
               step="0.5"
               value={form.evThreshold}
               onChange={(e) => setForm({ ...form, evThreshold: e.target.value })}
-              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+              className="min-h-[44px] w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
             />
           </Field>
         </Section>
@@ -135,7 +135,7 @@ export default function SettingsPage() {
             {leagues.map((league) => (
               <label
                 key={league.id}
-                className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-surface-hover"
+                className="flex min-h-[44px] items-center gap-2 rounded-md px-2 py-1.5 text-sm hover:bg-surface-hover"
               >
                 <input
                   type="checkbox"
@@ -167,7 +167,7 @@ export default function SettingsPage() {
           whileTap={{ scale: 0.98 }}
           type="submit"
           disabled={saving}
-          className="rounded-lg bg-gradient-primary px-5 py-2.5 text-sm font-semibold text-background shadow-glow disabled:opacity-50"
+          className="min-h-[44px] w-full rounded-lg bg-gradient-primary px-5 py-2.5 text-sm font-semibold text-background shadow-glow disabled:opacity-50 sm:w-auto"
         >
           {saving ? "Salvando..." : "Salvar configurações"}
         </motion.button>

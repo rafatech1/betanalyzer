@@ -3,6 +3,8 @@
 import { usePathname } from "next/navigation";
 
 import { AuthGuard } from "@/components/AuthGuard";
+import { BottomNav } from "@/components/BottomNav";
+import { MobileHeader } from "@/components/MobileHeader";
 import { ResponsibleGamingFooter } from "@/components/ResponsibleGamingFooter";
 import { Sidebar } from "@/components/Sidebar";
 
@@ -17,12 +19,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-gradient-radial-glow">
       <Sidebar />
-      <main className="ml-60 min-h-screen px-8 pb-20 pt-8">
+      <MobileHeader />
+      <main className="min-h-screen px-4 pb-6 pt-20 sm:px-6 lg:ml-60 lg:px-8 lg:pb-20 lg:pt-8">
         <AuthGuard>
           <div className="mx-auto max-w-6xl">{children}</div>
         </AuthGuard>
       </main>
       <ResponsibleGamingFooter />
+      <div aria-hidden className="h-16 lg:hidden" />
+      <BottomNav />
     </div>
   );
 }

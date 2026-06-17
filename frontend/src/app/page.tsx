@@ -75,7 +75,7 @@ export default function DashboardPage() {
         <p className="text-sm text-muted">Jogos monitorados e oportunidades de EV+.</p>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <StatCard label="Jogos no período" value={fixtures.length} accent="primary" format={(v) => v.toFixed(0)} />
         <StatCard label="Em andamento" value={live} accent="positive" format={(v) => v.toFixed(0)} />
         <StatCard label="Ligas disponíveis" value={leagues.length} accent="gold" format={(v) => v.toFixed(0)} />
@@ -88,16 +88,16 @@ export default function DashboardPage() {
         implícita das odds sem a margem da casa. Isto não é garantia de resultado.
       </div>
 
-      <div className="flex flex-wrap items-end gap-3">
-        <div className="flex gap-1 rounded-lg border border-border bg-surface p-1">
+      <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
+        <div className="scroll-hide -mx-4 flex gap-2 overflow-x-auto px-4 sm:mx-0 sm:overflow-visible sm:px-0">
           {(Object.keys(PERIOD_LABELS) as FixturePeriod[]).map((p) => (
             <button
               key={p}
               onClick={() => setPeriod(p)}
-              className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+              className={`min-h-[44px] shrink-0 whitespace-nowrap rounded-full border px-4 py-2 text-sm font-medium transition-colors ${
                 period === p
-                  ? "bg-gradient-primary text-background"
-                  : "text-muted hover:text-foreground"
+                  ? "border-transparent bg-gradient-primary text-background shadow-glow"
+                  : "border-border bg-surface text-muted hover:text-foreground"
               }`}
             >
               {PERIOD_LABELS[p]}
@@ -108,7 +108,7 @@ export default function DashboardPage() {
         <select
           value={leagueId}
           onChange={(e) => setLeagueId(e.target.value === "" ? "" : Number(e.target.value))}
-          className="rounded-lg border border-border bg-surface px-3 py-1.5 text-sm text-foreground outline-none focus:border-primary"
+          className="min-h-[44px] w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-foreground outline-none focus:border-primary sm:w-auto"
         >
           <option value="">Todas as ligas</option>
           {leagues.map((league) => (
@@ -121,7 +121,7 @@ export default function DashboardPage() {
         <select
           value={pais}
           onChange={(e) => setPais(e.target.value)}
-          className="rounded-lg border border-border bg-surface px-3 py-1.5 text-sm text-foreground outline-none focus:border-primary"
+          className="min-h-[44px] w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-foreground outline-none focus:border-primary sm:w-auto"
         >
           <option value="">Todos os países</option>
           {countries.map((country) => (
@@ -136,7 +136,7 @@ export default function DashboardPage() {
           placeholder="Buscar time..."
           value={busca}
           onChange={(e) => setBusca(e.target.value)}
-          className="min-w-[180px] flex-1 rounded-lg border border-border bg-surface px-3 py-1.5 text-sm text-foreground outline-none placeholder:text-muted focus:border-primary"
+          className="min-h-[44px] w-full flex-1 rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-foreground outline-none placeholder:text-muted focus:border-primary sm:min-w-[180px]"
         />
       </div>
 
@@ -146,7 +146,7 @@ export default function DashboardPage() {
         </div>
       )}
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
         {loading
           ? Array.from({ length: 6 }).map((_, i) => <GameCardSkeleton key={i} />)
           : fixtures.map((fixture) => <GameCard key={fixture.id} fixture={fixture} />)}

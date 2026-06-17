@@ -101,7 +101,7 @@ export default function BetsPage() {
 
       {stats && (
         <>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
             <StatCard
               label="ROI"
               value={stats.roi}
@@ -145,21 +145,21 @@ export default function BetsPage() {
           placeholder="ID do jogo"
           value={form.fixture_id}
           onChange={(e) => setForm({ ...form, fixture_id: e.target.value })}
-          className="rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+          className="min-h-[44px] rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
         />
         <input
           required
           placeholder="Mercado (ex: 1x2)"
           value={form.mercado}
           onChange={(e) => setForm({ ...form, mercado: e.target.value })}
-          className="rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+          className="min-h-[44px] rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
         />
         <input
           required
           placeholder="Seleção (ex: casa)"
           value={form.selecao}
           onChange={(e) => setForm({ ...form, selecao: e.target.value })}
-          className="rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+          className="min-h-[44px] rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
         />
         <input
           required
@@ -168,7 +168,7 @@ export default function BetsPage() {
           placeholder="Odd"
           value={form.odd}
           onChange={(e) => setForm({ ...form, odd: e.target.value })}
-          className="rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+          className="min-h-[44px] rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
         />
         <input
           required
@@ -177,19 +177,20 @@ export default function BetsPage() {
           placeholder="Stake"
           value={form.stake}
           onChange={(e) => setForm({ ...form, stake: e.target.value })}
-          className="rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+          className="min-h-[44px] rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
         />
         <motion.button
           whileTap={{ scale: 0.98 }}
           type="submit"
           disabled={submitting}
-          className="col-span-2 rounded-lg bg-gradient-primary px-3 py-2 text-sm font-semibold text-background shadow-glow disabled:opacity-50 sm:col-span-5"
+          className="col-span-2 min-h-[44px] rounded-lg bg-gradient-primary px-3 py-2 text-sm font-semibold text-background shadow-glow disabled:opacity-50 sm:col-span-5"
         >
           {submitting ? "Registrando..." : "Registrar aposta"}
         </motion.button>
       </form>
 
-      <div className="overflow-x-auto rounded-xl border border-border bg-surface">
+      {/* Tabela (tablet/desktop) */}
+      <div className="hidden overflow-x-auto rounded-xl border border-border bg-surface md:block">
         <table className="w-full text-sm">
           <thead className="text-left text-xs text-muted">
             <tr className="border-b border-border">
@@ -253,6 +254,83 @@ export default function BetsPage() {
         </table>
         {!loading && bets.length === 0 && (
           <p className="p-6 text-center text-sm text-muted">Nenhuma aposta registrada ainda.</p>
+        )}
+      </div>
+
+      {/* Cards (mobile) */}
+      <div className="space-y-3 md:hidden">
+        {!loading &&
+          bets.map((bet) => (
+            <motion.div
+              key={bet.id}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="card-gradient-border rounded-xl border border-border bg-surface p-4"
+            >
+              <div className="flex items-center justify-between gap-2">
+                <span className="truncate text-sm font-medium text-foreground">
+                  {bet.fixture
+                    ? `${bet.fixture.time_casa} x ${bet.fixture.time_fora}`
+                    : `Jogo #${bet.fixture_id}`}
+                </span>
+                <span className="flex shrink-0 items-center gap-1.5 text-xs text-muted">
+                  <span className={`h-1.5 w-1.5 rounded-full ${RESULTADO_DOT[bet.resultado]}`} />
+                  {RESULTADO_LABELS[bet.resultado]}
+                </span>
+              </div>
+              <p className="mt-1 text-xs text-muted">
+                {bet.mercado} / {bet.selecao}
+              </p>
+
+              <div className="mt-3 grid grid-cols-3 gap-2 text-center">
+                <div>
+                  <p className="text-[11px] text-muted">Odd</p>
+                  <p className="font-mono text-sm font-semibold text-foreground">
+                    {bet.odd.toFixed(2)}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[11px] text-muted">Stake</p>
+                  <p className="font-mono text-sm font-semibold text-foreground">
+                    {bet.stake.toFixed(2)}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[11px] text-muted">Lucro</p>
+                  <p
+                    className={`font-mono text-sm font-semibold ${
+                      bet.lucro && bet.lucro > 0
+                        ? "text-ev-positive"
+                        : bet.lucro && bet.lucro < 0
+                          ? "text-ev-negative"
+                          : "text-muted"
+                    }`}
+                  >
+                    {bet.lucro !== null ? bet.lucro.toFixed(2) : "—"}
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-3">
+                <label className="mb-1 block text-[11px] text-muted">Resultado</label>
+                <select
+                  value={bet.resultado}
+                  onChange={(e) => handleResultChange(bet.id, e.target.value as ResultadoAposta)}
+                  className="min-h-[44px] w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+                >
+                  {Object.entries(RESULTADO_LABELS).map(([value, label]) => (
+                    <option key={value} value={value}>
+                      {label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </motion.div>
+          ))}
+        {!loading && bets.length === 0 && (
+          <p className="rounded-xl border border-border bg-surface p-6 text-center text-sm text-muted">
+            Nenhuma aposta registrada ainda.
+          </p>
         )}
       </div>
     </div>
