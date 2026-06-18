@@ -100,7 +100,14 @@ export default function FixturePage() {
 
       <section className="space-y-4">
         <h2 className="text-sm font-semibold text-foreground/80">Odds</h2>
-        <OddsTable odds={odds} />
+        <OddsTable
+          odds={odds}
+          fixture={{
+            id: fixture.id,
+            timeCasa: fixture.time_casa.nome,
+            timeFora: fixture.time_fora.nome,
+          }}
+        />
       </section>
 
       <section className="space-y-4">

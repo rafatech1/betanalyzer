@@ -3,12 +3,10 @@
 import { motion } from "framer-motion";
 import { useEffect, useMemo, useState } from "react";
 
-import { createBet, fetchBetStats, fetchBets, updateBet } from "@/lib/api";
+import { fetchBetStats, fetchBets, updateBet } from "@/lib/api";
 import { BankrollChart } from "@/components/BankrollChart";
 import { BetResultBadge } from "@/components/BetResultBadge";
 import { BetResultQuickActions } from "@/components/BetResultQuickActions";
-import { Drawer } from "@/components/Drawer";
-import { IconPlus } from "@/components/icons";
 import { StatCard } from "@/components/StatCard";
 import type { Bet, BetStats, ResultadoAposta } from "@/types/bet";
 
@@ -21,18 +19,12 @@ const FILTRO_LABELS: Record<Filtro, string> = {
   perdida: "Perdidas",
 };
 
-const EMPTY_FORM = { fixture_id: "", mercado: "1x2", selecao: "", odd: "", stake: "" };
-
 export default function BetsPage() {
   const [bets, setBets] = useState<Bet[]>([]);
   const [stats, setStats] = useState<BetStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filtro, setFiltro] = useState<Filtro>("todas");
-
-  const [drawerOpen, setDrawerOpen] = useState(false);
-  const [form, setForm] = useState(EMPTY_FORM);
-  const [submitting, setSubmitting] = useState(false);
 
   async function reload() {
     setLoading(true);
@@ -52,27 +44,6 @@ export default function BetsPage() {
     reload();
   }, []);
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setSubmitting(true);
-    try {
-      await createBet({
-        fixture_id: Number(form.fixture_id),
-        mercado: form.mercado,
-        selecao: form.selecao,
-        odd: Number(form.odd),
-        stake: Number(form.stake),
-      });
-      setForm(EMPTY_FORM);
-      setDrawerOpen(false);
-      await reload();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao registrar aposta");
-    } finally {
-      setSubmitting(false);
-    }
-  }
-
   async function handleResultChange(betId: number, resultado: ResultadoAposta) {
     try {
       await updateBet(betId, { resultado });
@@ -89,19 +60,9 @@ export default function BetsPage() {
 
   return (
     <div className="space-y-6 pb-4">
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Minhas apostas</h1>
-          <p className="text-sm text-muted">Histórico, performance e evolução da banca.</p>
-        </div>
-        <button
-          type="button"
-          onClick={() => setDrawerOpen(true)}
-          className="hidden min-h-[44px] items-center gap-2 rounded-lg bg-gradient-primary px-4 text-sm font-semibold text-background shadow-glow transition-opacity hover:opacity-90 lg:inline-flex"
-        >
-          <IconPlus className="h-4 w-4" />
-          Nova aposta
-        </button>
+      <div>
+        <h1 className="text-2xl font-bold text-foreground">Minhas apostas</h1>
+        <p className="text-sm text-muted">Histórico, performance e evolução da banca.</p>
       </div>
 
       {error && (
@@ -300,83 +261,6 @@ export default function BetsPage() {
           </p>
         )}
       </div>
-
-      {/* FAB (mobile) */}
-      <motion.button
-        whileTap={{ scale: 0.92 }}
-        onClick={() => setDrawerOpen(true)}
-        className="fixed bottom-20 right-4 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-gradient-primary text-background shadow-glow lg:hidden"
-      >
-        <IconPlus className="h-6 w-6" />
-      </motion.button>
-
-      <Drawer open={drawerOpen} onClose={() => setDrawerOpen(false)} title="Nova aposta">
-        <form onSubmit={handleSubmit} className="space-y-3">
-          <div>
-            <label className="mb-1.5 block text-xs text-muted">ID do jogo</label>
-            <input
-              required
-              type="number"
-              value={form.fixture_id}
-              onChange={(e) => setForm({ ...form, fixture_id: e.target.value })}
-              className="min-h-[44px] w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
-            />
-          </div>
-          <div>
-            <label className="mb-1.5 block text-xs text-muted">Mercado</label>
-            <input
-              required
-              placeholder="ex: 1x2"
-              value={form.mercado}
-              onChange={(e) => setForm({ ...form, mercado: e.target.value })}
-              className="min-h-[44px] w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
-            />
-          </div>
-          <div>
-            <label className="mb-1.5 block text-xs text-muted">Seleção</label>
-            <input
-              required
-              placeholder="ex: casa"
-              value={form.selecao}
-              onChange={(e) => setForm({ ...form, selecao: e.target.value })}
-              className="min-h-[44px] w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
-            />
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="mb-1.5 block text-xs text-muted">Odd</label>
-              <input
-                required
-                type="number"
-                step="0.01"
-                value={form.odd}
-                onChange={(e) => setForm({ ...form, odd: e.target.value })}
-                className="min-h-[44px] w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
-              />
-            </div>
-            <div>
-              <label className="mb-1.5 block text-xs text-muted">Stake</label>
-              <input
-                required
-                type="number"
-                step="0.01"
-                value={form.stake}
-                onChange={(e) => setForm({ ...form, stake: e.target.value })}
-                className="min-h-[44px] w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
-              />
-            </div>
-          </div>
-
-          <motion.button
-            whileTap={{ scale: 0.98 }}
-            type="submit"
-            disabled={submitting}
-            className="min-h-[44px] w-full rounded-lg bg-gradient-primary px-3 py-2 text-sm font-semibold text-background shadow-glow disabled:opacity-50"
-          >
-            {submitting ? "Registrando..." : "Registrar aposta"}
-          </motion.button>
-        </form>
-      </Drawer>
     </div>
   );
 }

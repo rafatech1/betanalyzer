@@ -154,3 +154,17 @@ export function IconBan({ className }: IconProps) {
     </svg>
   );
 }
+
+export function IconBetSlip({ className }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className}>
+      <path
+        d="M6 3h12a1 1 0 0 1 1 1v16.2a.8.8 0 0 1-1.24.67L15 19l-2.76 1.87a.8.8 0 0 1-.9 0L8.58 19l-2.34 1.87A.8.8 0 0 1 5 20.2V4a1 1 0 0 1 1-1Z"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinejoin="round"
+      />
+      <path d="M8.5 8h7M8.5 11.5h7M8.5 15h4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  );
+}

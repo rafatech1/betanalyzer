@@ -1,3 +1,7 @@
+"use client";
+
+import { makeBetSlipId, useBetSlip } from "@/contexts/BetSlipContext";
+import { IconCheck, IconPlus } from "@/components/icons";
 import type { Odds } from "@/types/odds";
 
 const MARKET_LABELS: Record<string, string> = {
@@ -21,15 +25,62 @@ function sortBySelectionOrder(rows: Odds[], order: string[]): Odds[] {
   return [...rows].sort((a, b) => order.indexOf(a.selecao) - order.indexOf(b.selecao));
 }
 
-function OddCard({ row, highlighted }: { row: Odds; highlighted: boolean }) {
+interface FixtureInfo {
+  id: number;
+  timeCasa: string;
+  timeFora: string;
+}
+
+function OddCard({
+  row,
+  highlighted,
+  fixture,
+}: {
+  row: Odds;
+  highlighted: boolean;
+  fixture: FixtureInfo;
+}) {
+  const { isInSlip, addItem, removeItem } = useBetSlip();
+  const slipId = makeBetSlipId(fixture.id, row.mercado, row.selecao);
+  const inSlip = isInSlip(slipId);
+  const active = highlighted || inSlip;
+
+  function handleToggle(e: React.MouseEvent) {
+    e.stopPropagation();
+    if (inSlip) {
+      removeItem(slipId);
+    } else {
+      addItem({
+        id: slipId,
+        fixture_id: fixture.id,
+        time_casa: fixture.timeCasa,
+        time_fora: fixture.timeFora,
+        mercado: row.mercado,
+        selecao: row.selecao,
+        odd: row.odd,
+      });
+    }
+  }
+
   return (
     <div
-      className={`card-gradient-border rounded-xl border p-3 text-center transition-colors sm:p-4 ${
-        highlighted
+      className={`card-gradient-border relative rounded-xl border p-3 text-center transition-colors sm:p-4 ${
+        active
           ? "border-primary/50 bg-primary/10 shadow-glow"
           : "border-border bg-surface hover:bg-surface-hover"
       }`}
     >
+      <button
+        type="button"
+        onClick={handleToggle}
+        title={inSlip ? "Remover do carrinho de apostas" : "Adicionar ao carrinho de apostas"}
+        className={`absolute -right-2 -top-2 flex h-7 w-7 items-center justify-center rounded-full shadow-glow transition-colors ${
+          inSlip ? "bg-ev-positive text-background" : "bg-gradient-primary text-background"
+        }`}
+      >
+        {inSlip ? <IconCheck className="h-3.5 w-3.5" /> : <IconPlus className="h-3.5 w-3.5" />}
+      </button>
+
       <p className="truncate text-xs font-medium text-muted">
         {SELECTION_LABELS[row.selecao] ?? row.selecao}
       </p>
@@ -56,10 +107,12 @@ function MarketGroup({
   title,
   rows,
   gridClassName,
+  fixture,
 }: {
   title: string;
   rows: Odds[];
   gridClassName: string;
+  fixture: FixtureInfo;
 }) {
   if (rows.length === 0) return null;
   const minOdd = Math.min(...rows.map((row) => row.odd));
@@ -69,14 +122,20 @@ function MarketGroup({
       <h3 className="mb-3 text-sm font-semibold text-foreground/80">{title}</h3>
       <div className={gridClassName}>
         {rows.map((row) => (
-          <OddCard key={row.id} row={row} highlighted={row.odd === minOdd} />
+          <OddCard key={row.id} row={row} highlighted={row.odd === minOdd} fixture={fixture} />
         ))}
       </div>
     </div>
   );
 }
 
-export function OddsTable({ odds }: { odds: Odds[] }) {
+export function OddsTable({
+  odds,
+  fixture,
+}: {
+  odds: Odds[];
+  fixture: FixtureInfo;
+}) {
   const latestBySelection = new Map<string, Odds>();
   for (const row of odds) {
     const key = `${row.mercado}:${row.selecao}`;
@@ -114,6 +173,7 @@ export function OddsTable({ odds }: { odds: Odds[] }) {
           title={MARKET_LABELS["1x2"]}
           rows={sortBySelectionOrder(market1x2, ORDER_1X2)}
           gridClassName="grid grid-cols-3 gap-2 sm:gap-3"
+          fixture={fixture}
         />
       )}
       {marketOverUnder && (
@@ -121,6 +181,7 @@ export function OddsTable({ odds }: { odds: Odds[] }) {
           title={MARKET_LABELS["over_under_2.5"]}
           rows={sortBySelectionOrder(marketOverUnder, ORDER_OVER_UNDER)}
           gridClassName="grid grid-cols-2 gap-2 sm:gap-3"
+          fixture={fixture}
         />
       )}
       {otherMarkets.map(([mercado, rows]) => (
@@ -129,6 +190,7 @@ export function OddsTable({ odds }: { odds: Odds[] }) {
           title={MARKET_LABELS[mercado] ?? mercado}
           rows={rows}
           gridClassName="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3"
+          fixture={fixture}
         />
       ))}
     </div>

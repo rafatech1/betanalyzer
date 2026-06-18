@@ -5,6 +5,7 @@ import "./globals.css";
 
 import { AppShell } from "@/components/AppShell";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { BetSlipProvider } from "@/contexts/BetSlipContext";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -35,7 +36,9 @@ export default function RootLayout({
       </head>
       <body className="min-h-screen bg-background font-sans text-foreground">
         <AuthProvider>
-          <AppShell>{children}</AppShell>
+          <BetSlipProvider>
+            <AppShell>{children}</AppShell>
+          </BetSlipProvider>
         </AuthProvider>
       </body>
     </html>
