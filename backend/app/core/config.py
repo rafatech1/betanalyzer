@@ -73,8 +73,9 @@ class Settings(BaseSettings):
     # EV mínimo para que uma recomendação seja emitida (3% = 0.03).
     ev_recommendation_threshold: float = 0.03
 
-    # Janela futura considerada "próxima" para atualização de odds com mais frequência.
-    odds_update_window_hours: int = 48
+    # Janela futura considerada "próxima" para atualização de odds com mais frequência
+    # (168h = 7 dias).
+    odds_update_window_hours: int = 168
 
     # Validade do cache de análises compartilhadas e variação de odds que invalida o cache.
     analysis_cache_ttl_hours: int = 6
