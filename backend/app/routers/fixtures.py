@@ -35,26 +35,28 @@ class Period(str, Enum):
 
 _PERIOD_DAYS_AHEAD = {Period.today: 0, Period.week: 6, Period.month: 29}
 
+# Brasil não usa horário de verão desde 2019 — offset fixo é suficiente.
+BRASILIA_TZ = timezone(timedelta(hours=-3))
+
 
 def _resolve_date_range(period: Period, now: datetime) -> tuple[datetime, datetime]:
     """Calcula o range [início, fim] usado para filtrar fixtures por período.
 
-    "Hoje" e "7 dias" são janelas deslizantes a partir do instante atual
-    (não da meia-noite) — jogos que já começaram ou terminaram não devem
-    aparecer. "7 dias" cobre hoje + os próximos 6 dias (ex.: hoje
-    quarta 17/06 → até terça 23/06). "30 dias" continua a partir da
-    meia-noite de hoje, já que esse período mais amplo ainda deve incluir
-    jogos em andamento/finalizados de hoje (o frontend decide como
-    exibi-los)."""
-    today = now.date()
-    end_date = today + timedelta(days=_PERIOD_DAYS_AHEAD[period])
+    "Hoje" mostra TODOS os jogos do dia corrente no horário de Brasília
+    (00:00 até 23:59:59), incluindo jogos já passados e em andamento —
+    não é uma janela deslizante a partir de "agora". "7 dias" continua
+    sendo uma janela deslizante a partir do instante atual (para não
+    mostrar jogos já passados da semana), cobrindo hoje + os próximos 6
+    dias. "30 dias" também começa na meia-noite de hoje (Brasília), já
+    que esse período mais amplo ainda deve incluir jogos em
+    andamento/finalizados de hoje (o frontend decide como exibi-los)."""
+    today_brt = now.astimezone(BRASILIA_TZ).date()
+    end_date_brt = today_brt + timedelta(days=_PERIOD_DAYS_AHEAD[period])
 
     range_start = (
-        now
-        if period in (Period.today, Period.week)
-        else datetime.combine(today, time.min, tzinfo=timezone.utc)
+        now if period is Period.week else datetime.combine(today_brt, time.min, tzinfo=BRASILIA_TZ)
     )
-    range_end = datetime.combine(end_date, time.max, tzinfo=timezone.utc)
+    range_end = datetime.combine(end_date_brt, time.max, tzinfo=BRASILIA_TZ)
     return range_start, range_end
 
 
