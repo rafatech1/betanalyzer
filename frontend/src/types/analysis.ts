@@ -21,3 +21,31 @@ export interface AnalyzeResponse {
   aviso_risco: string;
   analises: Analysis[];
 }
+
+export interface AnalysisFixtureSummary {
+  id: number;
+  liga: { id: number; nome: string; pais: string };
+  time_casa: { id: number; nome: string };
+  time_fora: { id: number; nome: string };
+  data_hora: string;
+  status: "agendada" | "em_andamento" | "finalizada" | "cancelada" | "postergada";
+  placar_casa: number | null;
+  placar_fora: number | null;
+}
+
+export interface AnalysisHistoryItem {
+  id: number;
+  fixture: AnalysisFixtureSummary;
+  mercado: string;
+  selecao: string;
+  odd_referencia: number;
+  ev: number;
+  confianca: NivelConfianca;
+  recomendacao: Recomendacao;
+  created_at: string;
+}
+
+export interface AnalysisHistoryResponse {
+  items: AnalysisHistoryItem[];
+  total: number;
+}

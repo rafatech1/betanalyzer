@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import Link from "next/link";
 
+import { translateTeamName } from "@/lib/teamNames";
 import type { Fixture } from "@/types/fixture";
 
 function formatKickoff(dataHora: string): string {
@@ -62,7 +63,9 @@ export function GameCard({ fixture }: { fixture: Fixture }) {
         </div>
 
         <div className="mt-3 flex items-center justify-between gap-4">
-          <span className="flex-1 truncate text-sm font-medium">{fixture.time_casa.nome}</span>
+          <span className="flex-1 truncate text-sm font-medium">
+            {translateTeamName(fixture.time_casa.nome)}
+          </span>
           {hasScore ? (
             <span className="font-mono text-sm font-semibold text-primary">
               {fixture.placar_casa} - {fixture.placar_fora}
@@ -73,7 +76,7 @@ export function GameCard({ fixture }: { fixture: Fixture }) {
             </span>
           )}
           <span className="flex-1 truncate text-right text-sm font-medium">
-            {fixture.time_fora.nome}
+            {translateTeamName(fixture.time_fora.nome)}
           </span>
         </div>
 

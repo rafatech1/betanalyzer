@@ -11,6 +11,21 @@ export function IconDashboard({ className }: IconProps) {
   );
 }
 
+export function IconHistory({ className }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className}>
+      <circle cx="12" cy="12" r="8.5" stroke="currentColor" strokeWidth="1.6" />
+      <path
+        d="M12 7.5V12l3.2 2"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 export function IconSettings({ className }: IconProps) {
   return (
     <svg viewBox="0 0 24 24" fill="none" className={className}>

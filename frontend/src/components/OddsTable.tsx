@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+
 import type { Odds } from "@/types/odds";
 
 const MARKET_LABELS: Record<string, string> = {
@@ -60,19 +62,108 @@ function OddCard({ row, highlighted, flash }: { row: Odds; highlighted: boolean;
   );
 }
 
+function buildBookmakerRows(
+  marketRows: Odds[],
+  selections: string[]
+): { casa_de_aposta: string; odds: Map<string, number | undefined> }[] {
+  const latestByBookmaker = new Map<string, Map<string, Odds>>();
+  for (const row of marketRows) {
+    let bySelecao = latestByBookmaker.get(row.casa_de_aposta);
+    if (!bySelecao) {
+      bySelecao = new Map();
+      latestByBookmaker.set(row.casa_de_aposta, bySelecao);
+    }
+    const existing = bySelecao.get(row.selecao);
+    if (!existing || new Date(row.timestamp) > new Date(existing.timestamp)) {
+      bySelecao.set(row.selecao, row);
+    }
+  }
+
+  return Array.from(latestByBookmaker.entries())
+    .map(([casa_de_aposta, bySelecao]) => ({
+      casa_de_aposta,
+      odds: new Map(selections.map((s) => [s, bySelecao.get(s)?.odd] as const)),
+    }))
+    .filter((entry) => Array.from(entry.odds.values()).some((v) => v !== undefined))
+    .sort((a, b) => a.casa_de_aposta.localeCompare(b.casa_de_aposta));
+}
+
+function BookmakerComparisonTable({
+  marketRows,
+  selections,
+}: {
+  marketRows: Odds[];
+  selections: string[];
+}) {
+  const bookmakerRows = buildBookmakerRows(marketRows, selections);
+  if (bookmakerRows.length === 0) return null;
+
+  const bestBySelection = new Map<string, number>();
+  for (const selecao of selections) {
+    const values = bookmakerRows
+      .map((row) => row.odds.get(selecao))
+      .filter((v): v is number => v !== undefined);
+    if (values.length > 0) bestBySelection.set(selecao, Math.max(...values));
+  }
+
+  return (
+    <div className="mt-3 overflow-x-auto rounded-xl border border-border">
+      <table className="w-full text-sm">
+        <thead className="bg-surface-hover text-left text-xs text-muted">
+          <tr>
+            <th className="px-3 py-2 font-medium">Casa de aposta</th>
+            {selections.map((selecao) => (
+              <th key={selecao} className="px-3 py-2 text-center font-medium">
+                {SELECTION_LABELS[selecao] ?? selecao}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {bookmakerRows.map((row) => (
+            <tr key={row.casa_de_aposta} className="border-t border-border">
+              <td className="px-3 py-2 text-foreground">{row.casa_de_aposta}</td>
+              {selections.map((selecao) => {
+                const value = row.odds.get(selecao);
+                const isBest = value !== undefined && value === bestBySelection.get(selecao);
+                return (
+                  <td
+                    key={selecao}
+                    className={`px-3 py-2 text-center font-mono ${
+                      isBest ? "font-bold text-ev-positive" : "text-foreground"
+                    }`}
+                  >
+                    {value !== undefined ? value.toFixed(2) : "—"}
+                  </td>
+                );
+              })}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 function MarketGroup({
   title,
   rows,
   gridClassName,
   flashKeys,
+  marketRows,
+  selections,
 }: {
   title: string;
   rows: Odds[];
   gridClassName: string;
   flashKeys: Set<string>;
+  marketRows: Odds[];
+  selections: string[];
 }) {
+  const [expanded, setExpanded] = useState(false);
   if (rows.length === 0) return null;
   const minOdd = Math.min(...rows.map((row) => row.odd));
+  const bookmakerCount = new Set(marketRows.map((row) => row.casa_de_aposta)).size;
 
   return (
     <div>
@@ -87,6 +178,18 @@ function MarketGroup({
           />
         ))}
       </div>
+
+      {bookmakerCount > 1 && (
+        <button
+          type="button"
+          onClick={() => setExpanded((prev) => !prev)}
+          className="mt-3 text-xs font-medium text-primary hover:underline"
+        >
+          {expanded ? "Ocultar casas de aposta" : "Ver todas as casas"}
+        </button>
+      )}
+
+      {expanded && <BookmakerComparisonTable marketRows={marketRows} selections={selections} />}
     </div>
   );
 }
@@ -116,6 +219,13 @@ export function OddsTable({
     byMarket.set(row.mercado, list);
   }
 
+  const rawByMarket = new Map<string, Odds[]>();
+  for (const row of odds) {
+    const list = rawByMarket.get(row.mercado) ?? [];
+    list.push(row);
+    rawByMarket.set(row.mercado, list);
+  }
+
   if (byMarket.size === 0) {
     return (
       <p className="rounded-xl border border-border bg-surface p-6 text-center text-sm text-muted">
@@ -139,6 +249,8 @@ export function OddsTable({
             rows={sortBySelectionOrder(market1x2, ORDER_1X2)}
             gridClassName="grid grid-cols-3 gap-2 sm:gap-3"
             flashKeys={flashKeys}
+            marketRows={rawByMarket.get("1x2") ?? []}
+            selections={ORDER_1X2}
           />
         )}
         {marketOverUnder && (
@@ -147,6 +259,8 @@ export function OddsTable({
             rows={sortBySelectionOrder(marketOverUnder, ORDER_OVER_UNDER)}
             gridClassName="grid grid-cols-2 gap-2 sm:gap-3"
             flashKeys={flashKeys}
+            marketRows={rawByMarket.get("over_under_2.5") ?? []}
+            selections={ORDER_OVER_UNDER}
           />
         )}
         {otherMarkets.map(([mercado, rows]) => (
@@ -156,6 +270,8 @@ export function OddsTable({
             rows={rows}
             gridClassName="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3"
             flashKeys={flashKeys}
+            marketRows={rawByMarket.get(mercado) ?? []}
+            selections={Array.from(new Set(rows.map((r) => r.selecao)))}
           />
         ))}
       </div>

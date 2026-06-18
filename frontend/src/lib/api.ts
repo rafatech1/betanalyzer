@@ -1,4 +1,4 @@
-import type { AnalyzeResponse } from "@/types/analysis";
+import type { AnalysisHistoryResponse, AnalyzeResponse, Recomendacao } from "@/types/analysis";
 import type { BankrollMovementCreate, BankrollSummary } from "@/types/bankroll";
 import type { Bet, BetCreate, BetStats, BetUpdate } from "@/types/bet";
 import type { TokenResponse, User } from "@/types/auth";
@@ -188,6 +188,29 @@ export async function analyzeFixture(
 
 export async function fetchLeagues(): Promise<League[]> {
   return request("/leagues");
+}
+
+export type AnalysisPeriod = "7d" | "30d" | "all";
+
+export interface AnalysisHistoryFilters {
+  limit?: number;
+  offset?: number;
+  liga?: number;
+  recomendacao?: Recomendacao;
+  period?: AnalysisPeriod;
+}
+
+export async function fetchAnalysesHistory(
+  filters: AnalysisHistoryFilters = {}
+): Promise<AnalysisHistoryResponse> {
+  const params = new URLSearchParams();
+  params.set("limit", String(filters.limit ?? 50));
+  params.set("offset", String(filters.offset ?? 0));
+  if (filters.liga !== undefined) params.set("liga", String(filters.liga));
+  if (filters.recomendacao) params.set("recomendacao", filters.recomendacao);
+  if (filters.period) params.set("period", filters.period);
+
+  return request(`/analyses?${params.toString()}`);
 }
 
 export async function fetchBets(): Promise<Bet[]> {

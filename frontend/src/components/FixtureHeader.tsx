@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 
 import { getFlagUrl } from "@/lib/teamFlags";
+import { translateTeamName } from "@/lib/teamNames";
 import type { Fixture } from "@/types/fixture";
 
 const STATUS_LABELS: Record<Fixture["status"], string> = {
@@ -84,7 +85,7 @@ export function FixtureHeader({ fixture }: { fixture: Fixture }) {
         <div className="flex flex-1 flex-col items-center gap-2 text-center">
           <TeamBadge nome={fixture.time_casa.nome} />
           <span className="text-sm font-semibold text-foreground sm:text-base">
-            {fixture.time_casa.nome}
+            {translateTeamName(fixture.time_casa.nome)}
           </span>
         </div>
 
@@ -111,7 +112,7 @@ export function FixtureHeader({ fixture }: { fixture: Fixture }) {
         <div className="flex flex-1 flex-col items-center gap-2 text-center">
           <TeamBadge nome={fixture.time_fora.nome} />
           <span className="text-sm font-semibold text-foreground sm:text-base">
-            {fixture.time_fora.nome}
+            {translateTeamName(fixture.time_fora.nome)}
           </span>
         </div>
       </div>

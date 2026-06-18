@@ -8,7 +8,7 @@ from app.core.config import get_settings
 from app.core.logging import configure_logging, get_logger
 from app.db.redis import redis_client
 from app.db.session import AsyncSessionLocal, engine
-from app.routers import admin, auth, bankroll, bets, fixtures, leagues
+from app.routers import admin, analyses, auth, bankroll, bets, fixtures, leagues
 from app.routers import settings as settings_router
 from app.services.auth_repo import seed_admin_user
 from app.services.scheduler import shutdown_scheduler, start_scheduler
@@ -46,6 +46,7 @@ app.add_middleware(
 )
 
 app.include_router(auth.router)
+app.include_router(analyses.router)
 app.include_router(fixtures.router)
 app.include_router(leagues.router)
 app.include_router(bets.router)

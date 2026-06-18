@@ -4,11 +4,12 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 
 import { useAuth } from "@/contexts/AuthContext";
-import { IconDashboard, IconLogout, IconSettings } from "@/components/icons";
+import { IconDashboard, IconHistory, IconLogout, IconSettings } from "@/components/icons";
 import { Logo } from "@/components/Logo";
 
 const LINKS = [
   { href: "/", label: "Dashboard", icon: IconDashboard },
+  { href: "/historico", label: "Histórico", icon: IconHistory },
   { href: "/settings", label: "Configurações", icon: IconSettings },
 ];
 
