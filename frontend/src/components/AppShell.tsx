@@ -3,7 +3,6 @@
 import { usePathname } from "next/navigation";
 
 import { AuthGuard } from "@/components/AuthGuard";
-import { BetSlip } from "@/components/BetSlip";
 import { BottomNav } from "@/components/BottomNav";
 import { MobileHeader } from "@/components/MobileHeader";
 import { ResponsibleGamingFooter } from "@/components/ResponsibleGamingFooter";
@@ -31,7 +30,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <ResponsibleGamingFooter />
       <div aria-hidden className="h-16 lg:hidden" />
       <BottomNav />
-      <BetSlip />
     </div>
   );
 }

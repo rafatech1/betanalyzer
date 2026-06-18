@@ -50,9 +50,8 @@ export function GameCard({ fixture }: { fixture: Fixture }) {
             {fixture.liga.nome} · {fixture.liga.pais}
           </span>
           {fixture.status === "em_andamento" ? (
-            <span className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full bg-ev-positive/15 px-2 py-0.5 font-semibold text-ev-positive shadow-glow-positive">
-              <span className="h-1.5 w-1.5 rounded-full bg-ev-positive animate-pulse" />
-              Ao vivo
+            <span className="inline-flex items-center gap-1 whitespace-nowrap rounded-full bg-ev-negative/15 px-2 py-0.5 font-semibold text-ev-negative">
+              <span className="animate-pulse">🔴</span> Ao vivo
             </span>
           ) : (
             <span className="flex items-center gap-1.5 whitespace-nowrap">

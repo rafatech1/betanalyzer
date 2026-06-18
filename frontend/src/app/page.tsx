@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { fetchFixtures, fetchLeagues, type FixturePeriod } from "@/lib/api";
+import { usePolling } from "@/hooks/usePolling";
 import { GameCard } from "@/components/GameCard";
 import { GameCardSkeleton } from "@/components/Skeleton";
 import { StatCard } from "@/components/StatCard";
@@ -15,6 +16,8 @@ const PERIOD_LABELS: Record<FixturePeriod, string> = {
   month: "30 dias",
 };
 
+const REFRESH_INTERVAL_MS = 5 * 60_000;
+
 export default function DashboardPage() {
   const [period, setPeriod] = useState<FixturePeriod>("week");
   const [leagueId, setLeagueId] = useState<number | "">("");
@@ -24,39 +27,40 @@ export default function DashboardPage() {
   const [fixtures, setFixtures] = useState<Fixture[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const skipNextDebounce = useRef(true);
 
   useEffect(() => {
     fetchLeagues().then(setLeagues).catch(() => setLeagues([]));
   }, []);
 
-  useEffect(() => {
-    let cancelled = false;
-    setLoading(true);
-    setError(null);
-
-    const timeout = setTimeout(() => {
-      fetchFixtures({
+  const loadFixtures = useCallback(async () => {
+    try {
+      const data = await fetchFixtures({
         period,
         league: leagueId === "" ? undefined : leagueId,
         pais: pais || undefined,
         busca: busca || undefined,
-      })
-        .then((data) => {
-          if (!cancelled) setFixtures(data.filter((f) => f.status !== "finalizada"));
-        })
-        .catch((err: Error) => {
-          if (!cancelled) setError(err.message);
-        })
-        .finally(() => {
-          if (!cancelled) setLoading(false);
-        });
-    }, 300);
-
-    return () => {
-      cancelled = true;
-      clearTimeout(timeout);
-    };
+      });
+      setFixtures(data.filter((f) => f.status !== "finalizada"));
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Erro ao carregar jogos");
+    } finally {
+      setLoading(false);
+    }
   }, [period, leagueId, pais, busca]);
+
+  const { msToNextUpdate, refresh } = usePolling(loadFixtures, REFRESH_INTERVAL_MS);
+
+  useEffect(() => {
+    if (skipNextDebounce.current) {
+      skipNextDebounce.current = false;
+      return;
+    }
+    setLoading(true);
+    const timeout = setTimeout(() => refresh(), 300);
+    return () => clearTimeout(timeout);
+  }, [period, leagueId, pais, busca, refresh]);
 
   const countries = useMemo(
     () => Array.from(new Set(leagues.map((l) => l.pais))).sort(),
@@ -67,6 +71,15 @@ export default function DashboardPage() {
     () => fixtures.filter((f) => f.status === "em_andamento").length,
     [fixtures]
   );
+
+  // Jogos em andamento têm seu próprio indicador "ao vivo" na página do jogo;
+  // aqui a listagem foca nos próximos jogos, então eles somem ao começar.
+  const visibleFixtures = useMemo(
+    () => fixtures.filter((f) => f.status !== "em_andamento"),
+    [fixtures]
+  );
+
+  const minutesToNextUpdate = Math.max(1, Math.ceil(msToNextUpdate / 60_000));
 
   return (
     <div className="space-y-6">
@@ -146,13 +159,19 @@ export default function DashboardPage() {
         </div>
       )}
 
+      {!loading && (
+        <p className="text-right text-[11px] text-muted">
+          Próxima atualização em {minutesToNextUpdate} min
+        </p>
+      )}
+
       <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
         {loading
           ? Array.from({ length: 6 }).map((_, i) => <GameCardSkeleton key={i} />)
-          : fixtures.map((fixture) => <GameCard key={fixture.id} fixture={fixture} />)}
+          : visibleFixtures.map((fixture) => <GameCard key={fixture.id} fixture={fixture} />)}
       </div>
 
-      {!loading && fixtures.length === 0 && !error && (
+      {!loading && visibleFixtures.length === 0 && !error && (
         <p className="py-8 text-center text-sm text-muted">
           Nenhum jogo encontrado para os filtros selecionados.
         </p>

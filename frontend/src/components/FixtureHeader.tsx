@@ -88,13 +88,23 @@ export function FixtureHeader({ fixture }: { fixture: Fixture }) {
           </span>
         </div>
 
-        <div className="flex shrink-0 flex-col items-center">
+        <div className="flex shrink-0 flex-col items-center gap-1">
           {hasScore ? (
             <span className="font-mono text-3xl font-bold text-foreground sm:text-4xl">
               {fixture.placar_casa} - {fixture.placar_fora}
             </span>
           ) : (
             <span className="font-mono text-2xl font-bold text-muted sm:text-3xl">VS</span>
+          )}
+          {fixture.status === "em_andamento" && (
+            <span className="inline-flex items-center gap-1 whitespace-nowrap rounded-full bg-ev-negative/15 px-2 py-0.5 text-xs font-semibold text-ev-negative">
+              <span className="animate-pulse">🔴</span> Ao vivo
+            </span>
+          )}
+          {fixture.status === "finalizada" && hasScore && (
+            <span className="whitespace-nowrap rounded-full bg-surface-hover px-2 py-0.5 text-xs font-medium text-muted">
+              Placar final
+            </span>
           )}
         </div>
 

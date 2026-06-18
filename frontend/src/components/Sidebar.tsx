@@ -4,25 +4,16 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 
 import { useAuth } from "@/contexts/AuthContext";
-import { useBetSlip } from "@/contexts/BetSlipContext";
-import {
-  IconBetSlip,
-  IconDashboard,
-  IconLogout,
-  IconSettings,
-  IconTicket,
-} from "@/components/icons";
+import { IconDashboard, IconLogout, IconSettings } from "@/components/icons";
 import { Logo } from "@/components/Logo";
 
 const LINKS = [
   { href: "/", label: "Dashboard", icon: IconDashboard },
-  { href: "/bets", label: "Minhas apostas", icon: IconTicket },
   { href: "/settings", label: "Configurações", icon: IconSettings },
 ];
 
 export function Sidebar() {
   const { user, logout } = useAuth();
-  const { items, toggle } = useBetSlip();
   const pathname = usePathname();
   const router = useRouter();
 
@@ -58,20 +49,6 @@ export function Sidebar() {
             </Link>
           );
         })}
-
-        <button
-          type="button"
-          onClick={toggle}
-          className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-muted transition-colors hover:bg-surface-hover hover:text-foreground"
-        >
-          <IconBetSlip className="h-[18px] w-[18px]" />
-          Carrinho
-          {items.length > 0 && (
-            <span className="ml-auto flex h-5 w-5 items-center justify-center rounded-full bg-gradient-primary text-[11px] font-bold text-background">
-              {items.length}
-            </span>
-          )}
-        </button>
       </nav>
 
       <div className="border-t border-border px-3 py-4">

@@ -1,20 +1,25 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 
 import { analyzeFixture, fetchFixture, fetchFixtureDetails, fetchFixtureOdds } from "@/lib/api";
+import { usePolling } from "@/hooks/usePolling";
 import { Accordion } from "@/components/Accordion";
 import { AnalysisResultCard } from "@/components/AnalysisResultCard";
 import { AnalysisSkeleton, Skeleton } from "@/components/Skeleton";
 import { ClaudeSummaryCard } from "@/components/ClaudeSummaryCard";
 import { FixtureHeader } from "@/components/FixtureHeader";
 import { IconAlertTriangle, IconBolt } from "@/components/icons";
-import { OddsTable } from "@/components/OddsTable";
+import { oddKey, OddsTable } from "@/components/OddsTable";
 import type { Analysis } from "@/types/analysis";
 import type { Fixture, FixtureDetails } from "@/types/fixture";
 import type { Odds } from "@/types/odds";
+
+const ODDS_POLL_MS = 60_000;
+const STATUS_POLL_MS = 30_000;
+const FLASH_DURATION_MS = 1_000;
 
 export default function FixturePage() {
   const params = useParams<{ id: string }>();
@@ -25,6 +30,8 @@ export default function FixturePage() {
   const [details, setDetails] = useState<FixtureDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [flashKeys, setFlashKeys] = useState<Set<string>>(new Set());
+  const oddsRef = useRef<Odds[]>([]);
 
   const [analyzing, setAnalyzing] = useState(false);
   const [analyses, setAnalyses] = useState<Analysis[] | null>(null);
@@ -36,19 +43,60 @@ export default function FixturePage() {
     setLoading(true);
     setLoadError(null);
 
-    Promise.all([
-      fetchFixture(fixtureId),
-      fetchFixtureOdds(fixtureId),
-      fetchFixtureDetails(fixtureId).catch(() => null),
-    ])
-      .then(([fixtureData, oddsData, detailsData]) => {
-        setFixture(fixtureData);
-        setOdds(oddsData);
-        setDetails(detailsData);
-      })
+    fetchFixtureDetails(fixtureId)
+      .catch(() => null)
+      .then(setDetails)
       .catch((err: Error) => setLoadError(err.message))
       .finally(() => setLoading(false));
   }, [fixtureId]);
+
+  const pollOdds = useCallback(async () => {
+    if (!fixtureId) return;
+    const data = await fetchFixtureOdds(fixtureId);
+
+    const latestByKey = new Map<string, number>();
+    for (const row of data) {
+      latestByKey.set(oddKey(row), row.odd);
+    }
+    const prevLatestByKey = new Map<string, number>();
+    for (const row of oddsRef.current) {
+      prevLatestByKey.set(oddKey(row), row.odd);
+    }
+
+    const changed = new Set<string>();
+    if (oddsRef.current.length > 0) {
+      for (const [key, value] of latestByKey) {
+        const prevValue = prevLatestByKey.get(key);
+        if (prevValue !== undefined && prevValue !== value) {
+          changed.add(key);
+        }
+      }
+    }
+
+    oddsRef.current = data;
+    setOdds(data);
+    if (changed.size > 0) {
+      setFlashKeys(changed);
+      setTimeout(() => setFlashKeys(new Set()), FLASH_DURATION_MS);
+    }
+  }, [fixtureId]);
+
+  const { lastUpdated: oddsUpdatedAt } = usePolling(pollOdds, ODDS_POLL_MS, {
+    enabled: Boolean(fixtureId),
+  });
+
+  const pollFixture = useCallback(async () => {
+    if (!fixtureId) return;
+    try {
+      const data = await fetchFixture(fixtureId);
+      setFixture(data);
+      setLoadError(null);
+    } catch (err) {
+      setLoadError(err instanceof Error ? err.message : "Erro ao carregar o jogo");
+    }
+  }, [fixtureId]);
+
+  usePolling(pollFixture, STATUS_POLL_MS, { enabled: Boolean(fixtureId) });
 
   async function handleAnalyze() {
     setAnalyzing(true);
@@ -64,21 +112,20 @@ export default function FixturePage() {
     }
   }
 
-  if (loading) {
+  if (loading || !fixture) {
+    if (loadError) {
+      return (
+        <p className="mx-auto max-w-4xl rounded-lg border border-ev-negative/30 bg-ev-negative/10 p-3 text-sm text-ev-negative">
+          Erro ao carregar o jogo: {loadError}
+        </p>
+      );
+    }
     return (
       <div className="mx-auto max-w-4xl space-y-4">
         <Skeleton className="h-44 w-full rounded-2xl" />
         <Skeleton className="h-32 w-full" />
         <Skeleton className="h-48 w-full" />
       </div>
-    );
-  }
-
-  if (loadError || !fixture) {
-    return (
-      <p className="mx-auto max-w-4xl rounded-lg border border-ev-negative/30 bg-ev-negative/10 p-3 text-sm text-ev-negative">
-        Erro ao carregar o jogo: {loadError ?? "não encontrado"}
-      </p>
     );
   }
 
@@ -100,14 +147,7 @@ export default function FixturePage() {
 
       <section className="space-y-4">
         <h2 className="text-sm font-semibold text-foreground/80">Odds</h2>
-        <OddsTable
-          odds={odds}
-          fixture={{
-            id: fixture.id,
-            timeCasa: fixture.time_casa.nome,
-            timeFora: fixture.time_fora.nome,
-          }}
-        />
+        <OddsTable odds={odds} updatedAt={oddsUpdatedAt} flashKeys={flashKeys} />
       </section>
 
       <section className="space-y-4">
