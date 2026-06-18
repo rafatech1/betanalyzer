@@ -170,17 +170,16 @@ export default function HistoricoPage() {
 }
 
 function HistoryItem({ item }: { item: AnalysisHistoryItem }) {
-  const fixture = item.fixture;
-  const isFinished = fixture.status === "finalizada";
+  const isFinished = item.status === "finalizada";
 
   return (
     <Link
-      href={`/fixtures/${fixture.id}`}
+      href={`/fixtures/${item.fixture_id}`}
       className="card-gradient-border block rounded-xl border border-border bg-surface p-4 transition-colors hover:bg-surface-hover"
     >
       <div className="flex items-center justify-between gap-2 text-xs text-muted">
         <span className="truncate">
-          {fixture.liga.nome} · {fixture.liga.pais}
+          {item.liga.nome} · {item.liga.pais}
         </span>
         <span
           className={`whitespace-nowrap rounded-full px-2 py-0.5 font-medium ${
@@ -193,16 +192,16 @@ function HistoryItem({ item }: { item: AnalysisHistoryItem }) {
 
       <div className="mt-2 flex items-center justify-between gap-2">
         <span className="truncate text-sm font-medium text-foreground">
-          {translateTeamName(fixture.time_casa.nome)} x {translateTeamName(fixture.time_fora.nome)}
+          {translateTeamName(item.time_casa)} x {translateTeamName(item.time_fora)}
         </span>
         <span className="whitespace-nowrap font-mono text-xs text-muted">
-          {formatDate(fixture.data_hora)}
+          {formatDate(item.data_hora)}
         </span>
       </div>
 
-      {isFinished && fixture.placar_casa !== null && fixture.placar_fora !== null && (
+      {isFinished && item.placar_casa !== null && item.placar_fora !== null && (
         <p className="mt-0.5 font-mono text-xs text-muted">
-          Placar: {fixture.placar_casa} - {fixture.placar_fora}
+          Placar: {item.placar_casa} - {item.placar_fora}
         </p>
       )}
 

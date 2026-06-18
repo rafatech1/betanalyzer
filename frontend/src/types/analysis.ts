@@ -22,20 +22,16 @@ export interface AnalyzeResponse {
   analises: Analysis[];
 }
 
-export interface AnalysisFixtureSummary {
+export interface AnalysisHistoryItem {
   id: number;
-  liga: { id: number; nome: string; pais: string };
-  time_casa: { id: number; nome: string };
-  time_fora: { id: number; nome: string };
+  fixture_id: number;
+  time_casa: string;
+  time_fora: string;
   data_hora: string;
+  liga: { id: number; nome: string; pais: string };
   status: "agendada" | "em_andamento" | "finalizada" | "cancelada" | "postergada";
   placar_casa: number | null;
   placar_fora: number | null;
-}
-
-export interface AnalysisHistoryItem {
-  id: number;
-  fixture: AnalysisFixtureSummary;
   mercado: string;
   selecao: string;
   odd_referencia: number;

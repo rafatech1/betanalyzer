@@ -4,7 +4,7 @@ from pydantic import BaseModel, ConfigDict
 
 from app.models.analysis import NivelConfianca, Recomendacao
 from app.models.fixture import FixtureStatus
-from app.schemas.fixture import LeagueSummary, TeamOut
+from app.schemas.fixture import LeagueSummary
 
 RISK_WARNING = (
     "Esta análise não garante resultados. Toda aposta envolve risco de perda de capital. "
@@ -39,24 +39,18 @@ class AnalyzeResponse(BaseModel):
     analises: list[AnalysisOut]
 
 
-class AnalysisFixtureSummary(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
-    id: int
-    liga: LeagueSummary
-    time_casa: TeamOut
-    time_fora: TeamOut
-    data_hora: datetime
-    status: FixtureStatus
-    placar_casa: int | None
-    placar_fora: int | None
-
-
 class AnalysisHistoryItem(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
-    fixture: AnalysisFixtureSummary
+    fixture_id: int
+    time_casa: str
+    time_fora: str
+    data_hora: datetime
+    liga: LeagueSummary
+    status: FixtureStatus
+    placar_casa: int | None
+    placar_fora: int | None
     mercado: str
     selecao: str
     odd_referencia: float

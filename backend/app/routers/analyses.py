@@ -7,12 +7,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.deps import get_current_user
 from app.db.session import get_db
 from app.models.analysis import Analysis, Recomendacao
-from app.schemas.analysis import (
-    AnalysisFixtureSummary,
-    AnalysisHistoryItem,
-    AnalysisHistoryResponse,
-)
-from app.schemas.fixture import LeagueSummary, TeamOut
+from app.schemas.analysis import AnalysisHistoryItem, AnalysisHistoryResponse
+from app.schemas.fixture import LeagueSummary
 from app.services.analysis_repo import list_analyses_paginated
 
 router = APIRouter(prefix="/analyses", tags=["analyses"], dependencies=[Depends(get_current_user)])
@@ -31,18 +27,14 @@ def _to_history_item(analysis: Analysis) -> AnalysisHistoryItem:
     fixture = analysis.fixture
     return AnalysisHistoryItem(
         id=analysis.id,
-        fixture=AnalysisFixtureSummary(
-            id=fixture.id,
-            liga=LeagueSummary(
-                id=fixture.league.id, nome=fixture.league.nome, pais=fixture.league.pais
-            ),
-            time_casa=TeamOut(id=fixture.time_casa.id, nome=fixture.time_casa.nome),
-            time_fora=TeamOut(id=fixture.time_fora.id, nome=fixture.time_fora.nome),
-            data_hora=fixture.data_hora,
-            status=fixture.status,
-            placar_casa=fixture.placar_casa,
-            placar_fora=fixture.placar_fora,
-        ),
+        fixture_id=fixture.id,
+        time_casa=fixture.time_casa.nome,
+        time_fora=fixture.time_fora.nome,
+        data_hora=fixture.data_hora,
+        liga=LeagueSummary(id=fixture.league.id, nome=fixture.league.nome, pais=fixture.league.pais),
+        status=fixture.status,
+        placar_casa=fixture.placar_casa,
+        placar_fora=fixture.placar_fora,
         mercado=analysis.mercado,
         selecao=analysis.selecao,
         odd_referencia=analysis.odd_referencia,
